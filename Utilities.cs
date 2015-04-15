@@ -44,8 +44,7 @@ namespace EE_CM {
 				   gravityY = 0,
 				   keyX = 0,
 				   keyY = 0;
-		public bool isBeta = false,
-					isOwner = false,
+		public bool isOwner = false,
 					isGod = false,
 					isMod = false,
 					isModerator = false,
