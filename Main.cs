@@ -1964,7 +1964,7 @@ namespace EE_CM {
 				}
 
 				foreach (Player p in Players) {
-					if (p.Id == pl.Id || (skip_send && !pl.isBot)) continue;
+					if (p.Id == pl.Id || (skip_send && !p.isBot)) continue;
 					p.Send("m", pl.Id, pl.posX, pl.posY, pl.speedX, pl.speedY,
 								gravityX, gravityY, keyX, keyY);
 				}
