@@ -2196,10 +2196,14 @@ namespace EE_CM {
 				#region fore-/background
 				for (int l = 0; l < 2; l++) {
 					for (int b = (l == 0) ? 1 : 0; b < Nblock[l].Length; b++) {
-						if (Nblock[l][b] == null) continue;
-						if (Contains(specialBlocks, b) || Nblock[l][b].used < 1) {
+						if (Nblock[l][b] == null)
 							continue;
-						}
+
+						if (l == 0 && Contains(specialBlocks, b))
+							continue;
+						
+						if (Nblock[l][b].used < 1)
+							continue;
 
 						int length = Nblock[l][b].posX.Length;
 						byte[] bufferX = new byte[length * 2],
