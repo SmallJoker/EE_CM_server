@@ -22,7 +22,7 @@ using System;
 using PlayerIO.GameLibrary;
 
 namespace EE_CM {
-	[RoomType("Lobby10")]
+	[RoomType("Lobby11")]
 	public class EELGameCode : Game<BasePlayer> {
 		WorldInfo info = new WorldInfo();
 
@@ -196,7 +196,7 @@ namespace EE_CM {
 			#endregion
 			
 			#region generate world
-			string world_id = (isbeta ? "BW" : "PW") + GenWID(info.random.Next(4, 7)) + "I";
+			string world_id = (isbeta ? "BW" : "PW") + GenWID(info.random.Next(4, 6)) + "I";
 			string p_types = "",
 				p_ids = "";
 

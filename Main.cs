@@ -47,9 +47,9 @@ namespace EE_CM {
 	}
 
 #if INDEV
-	[RoomType("Indev10")]
+	[RoomType("Indev11")]
 #else
-	[RoomType("Game10")]
+	[RoomType("Game11")]
 #endif
 	public class EENGameCode : Game<Player> {
 		#region define
@@ -219,7 +219,7 @@ namespace EE_CM {
 
 			string name = pl.PlayerObject.GetString("name");
 			if (banned.Contains(name))
-				return "You have been banned form this world.";
+				return "You have been banned from this world.";
 
 			bool isGuest = (name == "guest");
 
@@ -634,6 +634,7 @@ namespace EE_CM {
 						if (b >= 556 && b <= 558) edit = true;	// Ice
 						if (b == 559) edit = true;				// Gothic
 						if (b >= 560 && b <= 564) edit = true;	// Fancy
+						if (b >= 565 && b <= 568) edit = true;	// Green
 
 						if (!edit) return;
 
@@ -1705,7 +1706,7 @@ namespace EE_CM {
 						#region detailed help
 						string cmd = args[1].ToLower();
 						if (cmd.StartsWith("/")) cmd = cmd.Remove(0, 1);
-						string ret = "Information to the command '" + cmd + "' not found";
+						string ret = "Information for command '" + cmd + "' not found";
 						switch (cmd) {
 						case "getblockinfo":
 						case "gbi":
