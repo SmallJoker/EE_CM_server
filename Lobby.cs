@@ -23,20 +23,14 @@ using PlayerIO.GameLibrary;
 
 namespace EE_CM {
 	[RoomType("Lobby11")]
-	public class EELGameCode : Game<BasePlayer> {
+	public class EELGameCode : Game<LobbyPlayer> {
 		WorldInfo info = new WorldInfo();
 
-		public override void GameStarted() {
-		}
-
-		public override void GameClosed() {
-		}
-
-		public override bool AllowUserJoin(BasePlayer pl) {
+		public override bool AllowUserJoin(LobbyPlayer pl) {
 			return PlayerCount < 5;
 		}
 
-		public override void UserJoined(BasePlayer pl) {
+		public override void UserJoined(LobbyPlayer pl) {
 			string ip = pl.IPAddress.ToString();
 			if (ip == null) {
 					pl.Disconnect();
@@ -44,10 +38,8 @@ namespace EE_CM {
 			}
 
 			PlayerIO.BigDB.LoadRange("PlayerObjects", "ip", null, ip, ip, 4, delegate(DatabaseObject[] obj) {
-				if (obj.Length > 2) {
-					pl.Disconnect();
-					return;
-				}
+				pl.amount_accounts = obj.Length;
+
 				PlayerIO.BigDB.Load("PlayerObjects", pl.ConnectUserId, delegate(DatabaseObject o) {
 					if (o == null) return;
 					if (!o.ExistsInDatabase) {
@@ -58,16 +50,18 @@ namespace EE_CM {
 					if (!o.Contains("ip") || o.GetString("ip") != ip) {
 						o.Set("ip", ip);
 						o.Save();
+						pl.amount_accounts++;
 					}
 				});
 			});
 		}
 
-		public override void UserLeft(BasePlayer pl) {
-		}
-
-		public override void GotMessage(BasePlayer pl, Message m) {
+		public override void GotMessage(LobbyPlayer pl, Message m) {
 			if (m.Type == "setUsername") {
+				if (pl.amount_accounts >= 3) {
+					pl.Send("error", "You already have too many accounts! Clear the flash cache and login.");
+					return;
+				}
 				#region username
 				string username = m.GetString(0).ToLower();
 				string name_censored = info.check_Censored(username);
@@ -177,7 +171,7 @@ namespace EE_CM {
 			}
 		}
 
-		void getWorld(BasePlayer pl, ref DatabaseObject o, int[] size, string typestring, bool isbeta = false) {
+		void getWorld(LobbyPlayer pl, ref DatabaseObject o, int[] size, string typestring, bool isbeta = false) {
 			#region get worldId from DB
 			string[] types = new string[0],
 				ids = new string[0];
@@ -195,6 +189,11 @@ namespace EE_CM {
 			}
 			#endregion
 			
+			if (pl.amount_accounts >= 3) {
+				pl.Send("r", "OW_limit_reached_" + typestring);
+				return;
+			}
+
 			#region generate world
 			string world_id = (isbeta ? "BW" : "PW") + GenWID(info.random.Next(4, 6)) + "I";
 			string p_types = "",

@@ -62,6 +62,10 @@ namespace EE_CM {
 					wootGiven = false;
 	}
 
+	public class LobbyPlayer : BasePlayer {
+		public int amount_accounts = 0;
+	}
+
 	class Block {
 		public int[] posX,
 			posY;
