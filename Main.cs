@@ -2808,7 +2808,7 @@ namespace EE_CM {
 				percent -= 20;
 
 			if (percent < 50) {
-				if(pl.sameText > 1)
+				if(pl.sameText > 1 || pl.isBot)
 					pl.sameText--;
 				return;
 			}
