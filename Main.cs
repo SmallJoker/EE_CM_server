@@ -91,7 +91,8 @@ namespace EE_CM {
 			moveLimit = 20,
 			cSpawn = 0,
 			W_type = -1,
-			sys_msg_max = 3;
+			sys_msg_max = 3,
+			W_broadcast_level = 0;
 
 		string W_key = "",
 			W_rot13,
@@ -984,7 +985,6 @@ namespace EE_CM {
 			if (m.Type == "save" && !W_isLoading) {
 				if (W_gotEdited && W_can_save) {
 					W_can_save = false;
-					W_isLoading = true;
 					addLog(pl.Name, "Saved world");
 					save_worlddata(pl);
 				}
@@ -1425,7 +1425,6 @@ namespace EE_CM {
 					if (args[0] == "/loadlevel") {
 						if (!hasAccess(pl, Rights.Admin)) return;
 						if (W_isSaved && !W_isLoading) {
-							W_isLoading = true;
 							addLog(pl.Name, "Loaded world");
 							load_worlddata(true);
 							foreach (Player p in Players) {
@@ -2064,6 +2063,7 @@ namespace EE_CM {
 			1 << 12, // BG
 			1 << 11, // arg3
 		};
+		int DB_FLAGS_MASK = 0;
 
 		void saveWorldData2(ref DatabaseObject o) {
 			#region Define variables
@@ -2179,11 +2179,6 @@ namespace EE_CM {
 				return;
 			}
 
-			// Mask to remove header stuff
-			int FLAG_MASK = 0;
-			for (int i = 0; i < DB_FLAGS.Length; i++)
-				FLAG_MASK |= DB_FLAGS[i];
-
 			bool readHeader = true;
 			for (int i = 0; i < DB_FLAGS.Length; i++) {
 				if ((header & DB_FLAGS[i]) == 0)
@@ -2191,7 +2186,7 @@ namespace EE_CM {
 
 				int value = 0;
 				if (readHeader) {
-					value = header & ~FLAG_MASK;
+					value = header & ~DB_FLAGS_MASK;
 					readHeader = false;
 				} else if (i == 3 || i == 4)
 					value = reader.ReadByte();
@@ -2208,7 +2203,7 @@ namespace EE_CM {
 				}
 			}
 		}
-		void readWorldData2(ref DatabaseObject o, bool broadcast) {
+		void readWorldData2(ref DatabaseObject o) {
 			#region Get stream, validate
 			Stream stream = new MemoryStream(o.GetBytes("worlddata2"));
 			BinaryReader reader = new BinaryReader(stream);
@@ -2217,6 +2212,9 @@ namespace EE_CM {
 
 			SaveEntry head = new SaveEntry(),
 				tail = new SaveEntry();
+
+			for (int i = 0; i < DB_FLAGS.Length; i++)
+				DB_FLAGS_MASK |= DB_FLAGS[i];
 			#endregion
 
 			while (head.y < W_height) {
@@ -2243,20 +2241,20 @@ namespace EE_CM {
 							if (Nblock[special_id, head.arg3] == null)
 								Nblock[special_id, head.arg3] = new Block();
 
-							Nblock[special_id, head.arg3].Set(head.x, head.y);
+							Nblock[special_id, head.arg3].Set(head.x, head.y, false);
 						}
 					} else if (b.FG != 0) {
 						if (Nblock[0, b.FG] == null)
 							Nblock[0, b.FG] = new Block();
 
-						Nblock[0, b.FG].Set(head.x, head.y);
+						Nblock[0, b.FG].Set(head.x, head.y, false);
 					}
 
 					if (head.BG >= 500) {
 						if (Nblock[1, b.BG - 500] == null)
 							Nblock[1, b.BG - 500] = new Block();
 
-						Nblock[1, b.BG - 500].Set(head.x, head.y);
+						Nblock[1, b.BG - 500].Set(head.x, head.y, false);
 					}
 
 					blocks[head.x, head.y] = b;
@@ -2283,7 +2281,7 @@ namespace EE_CM {
 
 					if (PBlock[b.arg3, b.pId, b.pTarget] == null)
 						PBlock[b.arg3, b.pId, b.pTarget] = new Block();
-					PBlock[b.arg3, b.pId, b.pTarget].Set(x, y);
+					PBlock[b.arg3, b.pId, b.pTarget].Set(x, y, false);
 					blocks[x, y] = b;
 				}
 			}
@@ -2291,24 +2289,20 @@ namespace EE_CM {
 
 			reader.Close();
 			stream.Close();
-
-			if (broadcast) {
-				Message M_init = Message.Create("reset");
-				getWorldDataMessage(ref M_init);
-				Broadcast(M_init);
-			}
 		}
 
 		void saveWorldData(ref DatabaseObject o) {
 			DatabaseArray ar = new DatabaseArray();
-			int index = 0,
-				fails = 0;
+			int index = 0;
 
 			#region Fore-/background and special blocks
 			for (int l = 0; l < (int)C.BLOCK_TYPES; l++) {
 				for (int b = 0; b < (int)C.BLOCK_MAX; b++) {
 					if (l == 0 && b == 0)
 						continue;
+
+					if (l > 0 && b > 0xFF)
+						break;
 
 					if (Nblock[l, b] == null) continue;
 					if ((l == 0 && getBlockArgCount(b) > 0) || Nblock[l, b].used < 1)
@@ -2328,21 +2322,18 @@ namespace EE_CM {
 						COORC pos = Nblock[l, b].pos[i];
 						if (!isValidCoor(pos)) continue;
 
-						if (getBlock((l == 1 ? 1 : 0), pos.x, pos.y) != real_block) {
-							Nblock[l, b].Remove(pos.x, pos.y);
-							fails++;
-							continue;
-						}
-						bufferX[(count * 2)] = (byte)(pos.x >> 8);
-						bufferX[(count * 2) + 1] = (byte)(pos.x % 256);
-						bufferY[(count * 2)] = (byte)(pos.y >> 8);
-						bufferY[(count * 2) + 1] = (byte)(pos.y % 256);
-						count++;
+						bufferX[count] = (byte)(pos.x >> 8);
+						bufferX[count + 1] = (byte)(pos.x % 256);
+						bufferY[count] = (byte)(pos.y >> 8);
+						bufferY[count + 1] = (byte)(pos.y % 256);
+						count += 2;
 					}
 
 					if (count == 0) continue;
-					Array.Resize(ref bufferX, count * 2);
-					Array.Resize(ref bufferY, count * 2);
+					if (bufferX.Length != count) {
+						Array.Resize(ref bufferX, count);
+						Array.Resize(ref bufferY, count);
+					}
 
 					DatabaseObject ob = new DatabaseObject();
 					ob.Set("layer", l);
@@ -2370,7 +2361,7 @@ namespace EE_CM {
 			#endregion
 
 			#region Portals
-			for (int r = 0; r < 6; r++)
+			for (int r = 0; r < PBlock.GetLength(0); r++)
 				for (int g = 0; g < 100; g++)
 					for (int p = 0; p < 100; p++) {
 						if (PBlock[r, g, p] == null) continue;
@@ -2384,21 +2375,19 @@ namespace EE_CM {
 						for (int i = 0; i < length; i++) {
 							COORC pos = PBlock[r, g, p].pos[i];
 							if (!isValidCoor(pos)) continue;
-							if (blocks[pos.x, pos.y].FG != 242) {
-								PBlock[r, g, p].Remove(pos.x, pos.y);
-								fails++;
-								continue;
-							}
-							bufferX[(count * 2)] = (byte)(pos.x >> 8);
-							bufferX[(count * 2) + 1] = (byte)(pos.x % 256);
-							bufferY[(count * 2)] = (byte)(pos.y >> 8);
-							bufferY[(count * 2) + 1] = (byte)(pos.y % 256);
-							count++;
+
+							bufferX[count] = (byte)(pos.x >> 8);
+							bufferX[count + 1] = (byte)(pos.x % 256);
+							bufferY[count] = (byte)(pos.y >> 8);
+							bufferY[count + 1] = (byte)(pos.y % 256);
+							count += 2;
 						}
 
 						if (count == 0) continue;
-						Array.Resize(ref bufferX, count * 2);
-						Array.Resize(ref bufferY, count * 2);
+						if (bufferX.Length != count) {
+							Array.Resize(ref bufferX, count);
+							Array.Resize(ref bufferY, count);
+						}
 
 						DatabaseObject ob = new DatabaseObject();
 						ob.Set("layer", 0);
@@ -2413,9 +2402,6 @@ namespace EE_CM {
 						index++;
 					}
 			#endregion
-
-			if (fails > 0)
-				o.Set("fails", fails);
 
 			if (o.Contains("worlddata2"))
 				o.Remove("worlddata2");
@@ -2482,7 +2468,7 @@ namespace EE_CM {
 					continue;
 
 				if (isPortal) {
-					if (arg3 <= 5 && pId <= 100 && pTg <= 100) {
+					if (arg3 < PBlock.GetLength(0) && pId <= 100 && pTg <= 100) {
 						if (broadcast) M_init.Add(b, 0, pX, pY, arg3, pId, pTg);
 						PBlock[arg3, pId, pTg] = new Block(x, y);
 					}
@@ -2556,6 +2542,7 @@ namespace EE_CM {
 		}
 #endif
 		void load_worlddata(bool respawn = false, bool init = false) {
+			W_isLoading = true;
 			PlayerIO.BigDB.Load("Worlds", RoomId, delegate(DatabaseObject o) {
 				#region Verify database object
 				bool canLoad = false;
@@ -2616,24 +2603,30 @@ namespace EE_CM {
 
 				if (o.Contains("worlddata")) {
 					readWorldData(ref o, !init);
-				} else if (o.Contains("worlddata2")) {
-					readWorldData2(ref o, !init);
+					W_isLoading = false;
+					W_gotEdited = false;
+
+					if (respawn)
+						respawn_players(true);
+					return;
 				}
-
-				W_isLoading = false;
-				W_gotEdited = false;
-
-				if (respawn) respawn_players(true);
-
+				if (o.Contains("worlddata2")) {
+					readWorldData2(ref o);
+					if (!init)
+						W_broadcast_level = respawn ? 2 : 1;
+				}
 			});
 		}
 		#endregion
 		void getWorldDataMessage(ref Message m) {
 			#region Fore-/background and special blocks
-			for (int l = 0; l < (int)C.BLOCK_TYPES; l++) {
+			for (int l = 0; l < (int)C.BLOCK_TYPES; l++)
 				for (int b = 0; b < (int)C.BLOCK_MAX; b++) {
 					if (l == 0 && b == 0)
 						continue;
+
+					if (l > 0 && b > 0xFF)
+						break;
 
 					if (Nblock[l, b] == null) continue;
 					if ((l == 0 && getBlockArgCount(b) > 0) || Nblock[l, b].used < 1)
@@ -2653,20 +2646,18 @@ namespace EE_CM {
 						COORC pos = Nblock[l, b].pos[i];
 						if (!isValidCoor(pos)) continue;
 
-						if (getBlock((l == 1 ? 1 : 0), pos.x, pos.y) != real_block) {
-							Nblock[l, b].Remove(pos.x, pos.y);
-							continue;
-						}
-						bufferX[(count * 2)] = (byte)(pos.x >> 8);
-						bufferX[(count * 2) + 1] = (byte)(pos.x % 256);
-						bufferY[(count * 2)] = (byte)(pos.y >> 8);
-						bufferY[(count * 2) + 1] = (byte)(pos.y % 256);
-						count++;
+						bufferX[count] = (byte)(pos.x >> 8);
+						bufferX[count + 1] = (byte)(pos.x % 256);
+						bufferY[count] = (byte)(pos.y >> 8);
+						bufferY[count + 1] = (byte)(pos.y % 256);
+						count += 2;
 					}
 
 					if (count == 0) continue;
-					Array.Resize(ref bufferX, count * 2);
-					Array.Resize(ref bufferY, count * 2);
+					if (bufferX.Length != count) {
+						Array.Resize(ref bufferX, count);
+						Array.Resize(ref bufferY, count);
+					}
 
 					if (l < 2) {
 						m.Add(real_block, l, bufferX, bufferY);
@@ -2676,11 +2667,10 @@ namespace EE_CM {
 						m.Add(real_block, 0, bufferX, bufferY, (modText[b] != null ? modText[b] : "INTERNAL ERROR"));
 					} else m.Add(real_block, 0, bufferX, bufferY, b);
 				}
-			}
 			#endregion
 
 			#region Portals
-			for (int r = 0; r < 6; r++)
+			for (int r = 0; r < PBlock.GetLength(0); r++)
 				for (int g = 0; g < 100; g++)
 					for (int p = 0; p < 100; p++) {
 						if (PBlock[r, g, p] == null) continue;
@@ -2694,20 +2684,19 @@ namespace EE_CM {
 						for (int i = 0; i < length; i++) {
 							COORC pos = PBlock[r, g, p].pos[i];
 							if (!isValidCoor(pos)) continue;
-							if (blocks[pos.x, pos.y].FG != 242) {
-								PBlock[r, g, p].Remove(pos.x, pos.y);
-								continue;
-							}
-							bufferX[(count * 2)] = (byte)(pos.x >> 8);
-							bufferX[(count * 2) + 1] = (byte)(pos.x % 256);
-							bufferY[(count * 2)] = (byte)(pos.y >> 8);
-							bufferY[(count * 2) + 1] = (byte)(pos.y % 256);
-							count++;
+
+							bufferX[count] = (byte)(pos.x >> 8);
+							bufferX[count + 1] = (byte)(pos.x % 256);
+							bufferY[count] = (byte)(pos.y >> 8);
+							bufferY[count + 1] = (byte)(pos.y % 256);
+							count += 2;
 						}
 
 						if (count == 0) continue;
-						Array.Resize(ref bufferX, count * 2);
-						Array.Resize(ref bufferY, count * 2);
+						if (bufferX.Length != count) {
+							Array.Resize(ref bufferX, count);
+							Array.Resize(ref bufferY, count);
+						}
 
 						m.Add(242, 0, bufferX, bufferY, r, g, p);
 					}
@@ -2742,11 +2731,24 @@ namespace EE_CM {
 			#endregion
 		}
 		void initPlayers() {
+			if (W_broadcast_level > 0) {
+				Message M_init = Message.Create("reset");
+				getWorldDataMessage(ref M_init);
+				Broadcast(M_init);
+
+				W_isLoading = false;
+				W_gotEdited = false;
+
+				if (W_broadcast_level == 2)
+					respawn_players(true);
+				W_broadcast_level = 0;
+				return;
+			}
+
 			if (W_isLoading || Nblock == null || PBlock == null)
 				return;
 
-			if (!W_isLoading)
-				W_can_save = true;
+			W_can_save = true;
 
 			bool spawns_parsed = false;
 			foreach (Player pl in Players) {
@@ -2930,7 +2932,7 @@ namespace EE_CM {
 			W_isLoading = true;
 
 			Nblock = new Block[(int)C.BLOCK_TYPES, (int)C.BLOCK_MAX];
-			PBlock = new Block[6, 101, 101];
+			PBlock = new Block[5, 101, 101];
 			blocks = new Bindex[W_width, W_height];
 			modText = new string[200];
 
@@ -3004,16 +3006,14 @@ namespace EE_CM {
 			if (id == 242) {
 				int oldId = blocks[x, y].pId;
 				int oldTg = blocks[x, y].pTarget;
-				if (PBlock[arg3, oldId, oldTg] != null) {
+				if (PBlock[arg3, oldId, oldTg] != null)
 					PBlock[arg3, oldId, oldTg].Remove(x, y);
-				}
 				return;
 			}
 			if (getBlockArgCount(id) > 0) {
 				int specialId = BlockToSPId(id);
-				if (Nblock[specialId, arg3] != null) {
+				if (Nblock[specialId, arg3] != null)
 					Nblock[specialId, arg3].Remove(x, y);
-				}
 			} else if (Nblock[0, id] != null) {
 				Nblock[0, id].Remove(x, y);
 			}

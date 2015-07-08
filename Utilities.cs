@@ -71,11 +71,12 @@ namespace EE_CM {
 		public int used;
 
 		public Block() {
-			pos = new COORC[50];
+			pos = new COORC[64];
 			used = 0;
 		}
+
 		public Block(int[] x, int[] y) {
-			pos = new COORC[x.Length + 50];
+			pos = new COORC[x.Length + 64];
 			used = 0;
 			for (int i = 0; i < x.Length; i++) {
 				if (x[i] >= 0 && y[i] >= 0) {
@@ -87,28 +88,32 @@ namespace EE_CM {
 			}
 		}
 
-		public void Set(int x, int y) {
+		public void Set(int x, int y, bool check = true) {
 			#region if_not_override
-			if (Contains(x, y))
-				return;
+			if (used + 5 > pos.Length)
+				Array.Resize(ref pos, (int)(pos.Length * 1.6));
 
-			if (used > pos.Length - 10)
-				extendArr();
-
+			int free = -1;
 			for (int i = 0; i < pos.Length; i++) {
 				if (pos[i] == null) {
-					pos[i] = new COORC();
-					pos[i].x = x;
-					pos[i].y = y;
-					used++;
-					break;
+					if (free < 0)
+						free = i;
+					if (check)
+						continue;
+					else
+						break;
 				}
+				if (pos[i].x == x && pos[i].y == y)
+					return;
 			}
-			#endregion
-		}
+			if (free < 0)
+				throw new Exception("The variable 'used' does not work correctly");
 
-		void extendArr() {
-			Array.Resize(ref pos, pos.Length + Math.Min(pos.Length, 500));
+			pos[free] = new COORC();
+			pos[free].x = x;
+			pos[free].y = y;
+			used++;
+			#endregion
 		}
 
 		public bool Remove(int x, int y) {
@@ -124,15 +129,6 @@ namespace EE_CM {
 			return false;
 		}
 
-		public bool Contains(int x, int y) {
-			for (int i = 0; i < pos.Length; i++) {
-				if (pos[i] == null)
-					continue;
-				if (pos[i].x == x && pos[i].y == y)
-					return true;
-			}
-			return false;
-		}
 	}
 
 	class WorldInfo {
@@ -344,8 +340,7 @@ namespace EE_CM {
 			FG = 0,
 			BG = 0,
 			arg3 = 0;
-		public SaveEntry() {
-		}
+		public SaveEntry() { }
 		public SaveEntry(SaveEntry me) {
 			x = me.x;
 			y = me.y;
