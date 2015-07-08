@@ -67,25 +67,21 @@ namespace EE_CM {
 	}
 
 	class Block {
-		public int[] posX,
-			posY;
+		public COORC[] pos;
 		public int used;
 
 		public Block() {
-			posX = new int[10];
-			posY = new int[10];
+			pos = new COORC[50];
 			used = 0;
-			for (int i = 0; i < posX.Length; i++) {
-				posX[i] = -5;
-				posY[i] = -5;
-			}
 		}
 		public Block(int[] x, int[] y) {
-			posX = x;
-			posY = y;
+			pos = new COORC[x.Length + 50];
 			used = 0;
 			for (int i = 0; i < x.Length; i++) {
 				if (x[i] >= 0 && y[i] >= 0) {
+					pos[used] = new COORC();
+					pos[used].x = x[i];
+					pos[used].y = y[i];
 					used++;
 				}
 			}
@@ -93,65 +89,49 @@ namespace EE_CM {
 
 		public void Set(int x, int y) {
 			#region if_not_override
-			if (!Contains(x, y)) {
-				if (used > posX.Length - 10) {
-					extendArr();
-				}
+			if (Contains(x, y))
+				return;
 
-				for (int c = 0; c < posX.Length; c++) {
-					if (posX[c] < 0 && posY[c] < 0) {
-						posX[c] = x;
-						posY[c] = y;
-						used++;
-						break;
-					}
+			if (used > pos.Length - 10)
+				extendArr();
+
+			for (int i = 0; i < pos.Length; i++) {
+				if (pos[i] == null) {
+					pos[i] = new COORC();
+					pos[i].x = x;
+					pos[i].y = y;
+					used++;
+					break;
 				}
 			}
 			#endregion
 		}
 
 		void extendArr() {
-			int extend = posX.Length;
-			if (extend >= 500) {
-				extend = 500;
-			}
-			int[] BposX = new int[posX.Length + extend],
-				BposY = new int[posX.Length + extend];
-			for (int i = 0; i < BposX.Length; i++) {
-				if (i < posX.Length) {
-					BposX[i] = posX[i];
-					BposY[i] = posY[i];
-				} else {
-					BposX[i] = -5;
-					BposY[i] = -5;
-				}
-			}
-			posX = BposX;
-			posY = BposY;
+			Array.Resize(ref pos, pos.Length + Math.Min(pos.Length, 500));
 		}
 
 		public bool Remove(int x, int y) {
-			bool ret = false;
-			for (int c = 0; c < posX.Length; c++) {
-				if (posX[c] == x && posY[c] == y) {
-					posX[c] = -5;
-					posY[c] = -5;
-					if (!ret) ret = true;
+			for (int i = 0; i < pos.Length; i++) {
+				if (pos[i] == null)
+					continue;
+				if (pos[i].x == x && pos[i].y == y) {
+					pos[i] = null;
 					used--;
+					return true;
 				}
 			}
-			return ret;
+			return false;
 		}
 
 		public bool Contains(int x, int y) {
-			bool ret = false;
-			for (int c = 0; c < posX.Length; c++) {
-				if (posX[c] == x && posY[c] == y) {
-					ret = true;
-					break;
-				}
+			for (int i = 0; i < pos.Length; i++) {
+				if (pos[i] == null)
+					continue;
+				if (pos[i].x == x && pos[i].y == y)
+					return true;
 			}
-			return ret;
+			return false;
 		}
 	}
 
@@ -243,12 +223,21 @@ namespace EE_CM {
 	}
 
 	struct Bindex {
-		public int FG, BG, arg3, pId, pTarget, FGp, BGp;
+		public int FG, BG, FGp, BGp, arg3, pId, pTarget;
+
+		public Bindex(Bindex src) {
+			FG = src.FG;
+			BG = src.BG;
+			FGp = src.FGp;
+			BGp = src.BGp;
+			arg3 = src.arg3;
+			pId = src.pId;
+			pTarget = src.pTarget;
+		}
 	}
 
-	struct COOR {
-		public int x, y;
-	}
+	class COORC { public int x = 0, y = 0; }
+	struct COOR { public int x, y; }
 
 	public class pList<type> {
 		int count = 0;
@@ -347,5 +336,35 @@ namespace EE_CM {
 	class PlayerHistory {
 		public string Name, Id;
 		public long join_time;
+	}
+
+	class SaveEntry {
+		public int x = 0,
+			y = 0,
+			FG = 0,
+			BG = 0,
+			arg3 = 0;
+		public SaveEntry() {
+		}
+		public SaveEntry(SaveEntry me) {
+			x = me.x;
+			y = me.y;
+			FG = me.FG;
+			BG = me.BG;
+			arg3 = me.arg3;
+		}
+
+		public int this[int i] {
+			get {
+				switch (i) {
+				case 0: return x;
+				case 1: return y;
+				case 2: return FG;
+				case 3: return BG;
+				case 4: return arg3;
+				default: return -1;
+				}
+			}
+		}
 	}
 }
