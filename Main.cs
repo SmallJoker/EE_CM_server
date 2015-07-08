@@ -433,13 +433,13 @@ namespace EE_CM {
 
 				if (!isValidCoor(x, y) || (l != 0 && l != 1) || b < 0)
 					return;
-				
+
 				Bindex bl = new Bindex(blocks[x, y]);
 				#endregion
 
 				#region Get block info
 				if (pl.getBlockInfo) {
-					string text = "Id: " + (l == 0? bl.FG : bl.BG),
+					string text = "Id: " + (l == 0 ? bl.FG : bl.BG),
 						blPlacer = "?";
 					if (l == 0) {
 						if (bl.FG == 242) {
@@ -475,7 +475,7 @@ namespace EE_CM {
 
 				Message block_msg = null;
 				if (getBlockArgCount(b) == 0) {
-					if (b == (l == 0? bl.FG : bl.BG) || m.Count != 4) return;
+					if (b == (l == 0 ? bl.FG : bl.BG) || m.Count != 4) return;
 
 					#region normalBlock
 					if (l == 0 && b < (int)C.BLOCK_MAX) {
@@ -659,7 +659,7 @@ namespace EE_CM {
 
 					if (text.Length > 150)
 						text = text.Remove(150);
-					
+
 					#region Set modText string
 					int arg3 = -2,
 						pos = -2;
@@ -790,7 +790,7 @@ namespace EE_CM {
 			#endregion
 
 			#region cb - Codeblock
-			if (m.Type == "cb") {
+			if (m.Type == "cb" && !pl.isBot) {
 				if (!pl.canEdit && pl.moved > 0 && !pl.isGod && !pl.isMod) {
 					if (getBlock(0, m.GetInt(0), m.GetInt(1)) == 103) {
 						pl.canEdit = true;
@@ -802,7 +802,7 @@ namespace EE_CM {
 			#endregion
 
 			#region cp - Checkpoint
-			if (m.Type == "cp") {
+			if (m.Type == "cp" && !pl.isBot) {
 				int x = m.GetInt(0),
 					y = m.GetInt(1);
 				if ((pl.cPointX != x || pl.cPointY != y) && !pl.isGod && !pl.isMod) {
@@ -815,7 +815,7 @@ namespace EE_CM {
 			}
 			#endregion
 
-			if (m.Type == "th") {
+			if (m.Type == "th" && !pl.isBot) {
 				if (!pl.isGod && !pl.isMod && !pl.isDead && !kill_active) {
 					pl.isDead = true;
 				}
@@ -1694,7 +1694,7 @@ namespace EE_CM {
 						#region Experimental DB saving
 						if (is_yes(args[1]) != W_experimental_saving) {
 							W_experimental_saving = !W_experimental_saving;
-							string txt = (W_experimental_saving? "en" : "dis") + "abled";
+							string txt = (W_experimental_saving ? "en" : "dis") + "abled";
 							addLog(pl.Name, txt + " the experimental DB saving");
 							Broadcast("write", SYS, "Experimental DB saving: " + txt.ToUpper());
 						} else {
@@ -2098,7 +2098,7 @@ namespace EE_CM {
 						continue;
 					}
 
-					if (cur.arg3 != last.arg3 && 
+					if (cur.arg3 != last.arg3 &&
 						cur.FG == 1000 &&
 						modText != null) {
 
@@ -2226,7 +2226,7 @@ namespace EE_CM {
 					// Stop when tail is reached
 					if (head.x == tail.x && head.y == tail.y)
 						break;
-					
+
 					int args = getBlockArgCount(head.FG);
 					if (head.BG != 0 && head.BG < 500)
 						head.BG += 480;
@@ -2234,7 +2234,7 @@ namespace EE_CM {
 					Bindex b = new Bindex();
 					b.FG = head.FG;
 					b.BG = head.BG;
-					
+
 					if (args > 0) {
 						b.arg3 = head.arg3;
 						if (args == 1) {
@@ -2280,7 +2280,7 @@ namespace EE_CM {
 					Bindex b = new Bindex(blocks[x, y]);
 					b.pId = reader.ReadByte();
 					b.pTarget = reader.ReadByte();
-					
+
 					if (PBlock[b.arg3, b.pId, b.pTarget] == null)
 						PBlock[b.arg3, b.pId, b.pTarget] = new Block();
 					PBlock[b.arg3, b.pId, b.pTarget].Set(x, y);
@@ -2414,7 +2414,11 @@ namespace EE_CM {
 					}
 			#endregion
 
-			if (fails > 0) o.Set("fails", fails);
+			if (fails > 0)
+				o.Set("fails", fails);
+
+			if (o.Contains("worlddata2"))
+				o.Remove("worlddata2");
 			o.Set("worlddata", ar);
 			o.Save();
 		}
@@ -2426,7 +2430,7 @@ namespace EE_CM {
 				//l,b,x,y,t/a
 				if (!ar.Contains(i))
 					continue;
-				
+
 				DatabaseObject ob = ar.GetObject(i);
 				#region Header
 				int l = ob.GetInt("layer");
@@ -2501,7 +2505,7 @@ namespace EE_CM {
 			if (broadcast)
 				Broadcast(M_init);
 		}
-		
+
 #if INDEV
 		void save_worlddata(Player pl, bool kick_all = false) {
 			pl.Send("info", "Warning", "You can not save a world in the indev mode." +
@@ -2612,7 +2616,7 @@ namespace EE_CM {
 
 				if (o.Contains("worlddata")) {
 					readWorldData(ref o, !init);
-				} else if(o.Contains("worlddata2")) {
+				} else if (o.Contains("worlddata2")) {
 					readWorldData2(ref o, !init);
 				}
 
@@ -2634,7 +2638,7 @@ namespace EE_CM {
 					if (Nblock[l, b] == null) continue;
 					if ((l == 0 && getBlockArgCount(b) > 0) || Nblock[l, b].used < 1)
 						continue;
-					
+
 					int length = Nblock[l, b].pos.Length;
 					byte[] bufferX = new byte[length * 2],
 						bufferY = new byte[length * 2];
@@ -2706,10 +2710,10 @@ namespace EE_CM {
 						Array.Resize(ref bufferY, count * 2);
 
 						m.Add(242, 0, bufferX, bufferY, r, g, p);
-			}
+					}
 			#endregion
 		}
-		
+
 		void Cleanup_Timer() {
 			Broadcast("updatemeta", W_Owner, W_title, W_plays);
 
@@ -3056,8 +3060,7 @@ namespace EE_CM {
 				percent -= 20;
 
 			if (percent < 50) {
-				if (pl.sameText > 1 || pl.isBot)
-					pl.sameText--;
+				pl.sameText--;
 				return;
 			}
 
@@ -3066,7 +3069,7 @@ namespace EE_CM {
 				percent -= 20;
 			}
 		}
-		
+
 		bool isValidCoor(COORC pos) {
 			if (pos == null)
 				return false;
@@ -3180,7 +3183,7 @@ namespace EE_CM {
 			TimeSpan t = (DateTime.Now - new DateTime(2014, 1, 1));
 			return (long)t.TotalSeconds;
 		}
-		
+
 		bool Contains(int[] arr, int n) {
 			for (byte i = 0; i < arr.Length; i++) {
 				if (arr[i] == n) return true;
