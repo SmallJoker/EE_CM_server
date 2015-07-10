@@ -1637,7 +1637,7 @@ namespace EE_CM {
 						pl.muted.Remove(args[1]);
 						foreach (Player p in Players) {
 							if (p.Name == args[1]) {
-								p.Send("write", SYS, pl.Name.ToUpper() + " unputed you.");
+								p.Send("write", SYS, pl.Name.ToUpper() + " unmuted you.");
 							}
 						}
 						pl.Send("write", SYS, "The messages from " + args[1].ToUpper() + " will be visible for you again.");
@@ -2241,20 +2241,20 @@ namespace EE_CM {
 							if (Nblock[special_id, head.arg3] == null)
 								Nblock[special_id, head.arg3] = new Block();
 
-							Nblock[special_id, head.arg3].Set(head.x, head.y, false);
+							Nblock[special_id, head.arg3].Set(head.x, head.y, true);
 						}
 					} else if (b.FG != 0) {
 						if (Nblock[0, b.FG] == null)
 							Nblock[0, b.FG] = new Block();
 
-						Nblock[0, b.FG].Set(head.x, head.y, false);
+						Nblock[0, b.FG].Set(head.x, head.y, true);
 					}
 
 					if (head.BG >= 500) {
 						if (Nblock[1, b.BG - 500] == null)
 							Nblock[1, b.BG - 500] = new Block();
 
-						Nblock[1, b.BG - 500].Set(head.x, head.y, false);
+						Nblock[1, b.BG - 500].Set(head.x, head.y, true);
 					}
 
 					blocks[head.x, head.y] = b;
@@ -2281,7 +2281,7 @@ namespace EE_CM {
 
 					if (PBlock[b.arg3, b.pId, b.pTarget] == null)
 						PBlock[b.arg3, b.pId, b.pTarget] = new Block();
-					PBlock[b.arg3, b.pId, b.pTarget].Set(x, y, false);
+					PBlock[b.arg3, b.pId, b.pTarget].Set(x, y, true);
 					blocks[x, y] = b;
 				}
 			}
@@ -2566,8 +2566,6 @@ namespace EE_CM {
 						W_plays = o.GetInt("plays");
 					if (o.Contains("admins"))
 						admins = new pList<string>(o.GetString("admins").Split(','));
-					if (o.Contains("experimental_saving"))
-						W_experimental_saving = o.GetBool("experimental_saving");
 
 					W_width = o.GetInt("width");
 					W_height = o.GetInt("height");
@@ -2614,6 +2612,8 @@ namespace EE_CM {
 					readWorldData2(ref o);
 					if (!init)
 						W_broadcast_level = respawn ? 2 : 1;
+					else
+						W_experimental_saving = true;
 				}
 			});
 		}

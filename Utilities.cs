@@ -88,24 +88,23 @@ namespace EE_CM {
 			}
 		}
 
-		public void Set(int x, int y, bool check = true) {
-			#region if_not_override
+		public void Set(int x, int y, bool direct_write = false) {
 			if (used + 5 > pos.Length)
 				Array.Resize(ref pos, (int)(pos.Length * 1.6));
 
 			int free = -1;
-			for (int i = 0; i < pos.Length; i++) {
-				if (pos[i] == null) {
-					if (free < 0)
-						free = i;
-					if (check)
+			if (!direct_write) {
+				for (int i = 0; i < pos.Length; i++) {
+					if (pos[i] == null) {
+						if (free < 0)
+							free = i;
 						continue;
-					else
-						break;
+					}
+					if (pos[i].x == x && pos[i].y == y)
+						return;
 				}
-				if (pos[i].x == x && pos[i].y == y)
-					return;
-			}
+			} else free = used;
+
 			if (free < 0)
 				throw new Exception("The variable 'used' does not work correctly");
 
@@ -113,7 +112,6 @@ namespace EE_CM {
 			pos[free].x = x;
 			pos[free].y = y;
 			used++;
-			#endregion
 		}
 
 		public bool Remove(int x, int y) {
