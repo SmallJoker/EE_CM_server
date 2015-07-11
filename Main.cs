@@ -481,7 +481,7 @@ namespace EE_CM {
 					#region normalBlock
 					if (l == 0 && b < (int)C.BLOCK_MAX) {
 #if INDEV
-						removeOldBlock(x, y, id, bl.arg3);
+						removeOldBlock(x, y, bl.FG, bl.arg3);
 						if (b != 0) {
 							if (Nblock[0, b] == null)
 								Nblock[0, b] = new Block();
@@ -596,12 +596,11 @@ namespace EE_CM {
 #endif
 					} else if (l == 1 && ((b >= 500 && b - 500 < (int)C.BLOCK_MAX) || b == 0)) {
 #if INDEV
-						if (id != 0) {
-							if (Nblock[1, id - 500] != null)
-								Nblock[1, id - 500].Remove(x, y);
-						}
+						if (bl.BG >= 500)
+							if (Nblock[1, bl.BG - 500] != null)
+								Nblock[1, bl.BG - 500].Remove(x, y);
 
-						if (b != 0) {
+						if (b >= 500) {
 							if (Nblock[1, b - 500] == null)
 								Nblock[1, b - 500] = new Block();
 
@@ -2601,20 +2600,19 @@ namespace EE_CM {
 
 				if (o.Contains("worlddata")) {
 					readWorldData(ref o, !init);
-					W_isLoading = false;
-					W_gotEdited = false;
 
 					if (respawn)
 						respawn_players(true);
-					return;
-				}
-				if (o.Contains("worlddata2")) {
+				} else if (o.Contains("worlddata2")) {
 					readWorldData2(ref o);
+
 					if (!init)
 						W_broadcast_level = respawn ? 2 : 1;
 					else
 						W_experimental_saving = true;
 				}
+				W_isLoading = false;
+				W_gotEdited = false;
 			});
 		}
 		#endregion
@@ -2731,13 +2729,11 @@ namespace EE_CM {
 			#endregion
 		}
 		void initPlayers() {
+			// Broadcast new DB-type world, spread the load
 			if (W_broadcast_level > 0) {
 				Message M_init = Message.Create("reset");
 				getWorldDataMessage(ref M_init);
 				Broadcast(M_init);
-
-				W_isLoading = false;
-				W_gotEdited = false;
 
 				if (W_broadcast_level == 2)
 					respawn_players(true);
