@@ -235,7 +235,8 @@ namespace EE_CM
 
 	struct Bindex
 	{
-		public int FG, BG, FGp, BGp, arg3, pId, pTarget;
+		public int FG, BG, FGp, BGp;
+		public byte arg3, arg4, arg5;
 
 		public Bindex(Bindex src)
 		{
@@ -244,8 +245,8 @@ namespace EE_CM
 			FGp = src.FGp;
 			BGp = src.BGp;
 			arg3 = src.arg3;
-			pId = src.pId;
-			pTarget = src.pTarget;
+			arg4 = src.arg4;
+			arg5 = src.arg5;
 		}
 	}
 
@@ -365,9 +366,11 @@ namespace EE_CM
 		public int x = 0,
 			y = 0,
 			FG = 0,
-			BG = 0,
-			arg3 = 0;
+			BG = 0;
+		public byte arg3 = 0;
+
 		public SaveEntry() { }
+
 		public SaveEntry(SaveEntry me)
 		{
 			x = me.x;
