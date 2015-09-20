@@ -683,7 +683,7 @@ namespace EE_CM
 
 					#region Set modText string
 					int arg3 = -2,
-						pos = -2;
+						free = -2;
 
 					// Fit empty slot
 					for (int i = 0; i < modText.Length; i++) {
@@ -693,20 +693,22 @@ namespace EE_CM
 								arg3 = i;
 								break;
 							}
-						} else pos = i;
+						} else if (free < 0) {
+							free = i;
+						}
 					}
 
 					bool isLimit = false;
 					if (arg3 < 0) {
-						if (pos < 0) {
+						if (free < 0) {
 							if (modText.Length < 200) {
 								arg3 = modText.Length;
 								Array.Resize(ref modText, Math.Min(modText.Length + 50, 200));
 								modText[arg3] = text;
 							} else isLimit = true;
 						} else {
-							modText[pos] = text;
-							arg3 = pos;
+							modText[free] = text;
+							arg3 = free;
 						}
 					}
 					#endregion
