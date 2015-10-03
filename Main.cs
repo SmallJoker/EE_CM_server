@@ -2266,14 +2266,16 @@ namespace EE_CM
 				DB_FLAGS_MASK |= DB_FLAGS[i];
 			#endregion
 
+			bool first = true;
 			while (cur.y < W_height) {
 				deserializeEntry(reader, ref next);
 
-				if (next.y == cur.y && next.x == cur.x)
+				if (next.y == cur.y && next.x == cur.x && !first)
 					next.x = Math.Min(cur.x + 1, W_width - 1);
-				if (next.y == cur.y && next.x - cur.x <= 0)
+				if (next.y == cur.y && next.x - cur.x < 0)
 					next.y = cur.y + 1;
 
+				first = false;
 				while (cur.y < W_height) {
 					// Stop when tail is reached
 					if (cur.x == next.x && cur.y == next.y)
