@@ -22,7 +22,7 @@ using System;
 using PlayerIO.GameLibrary;
 
 namespace EE_CM {
-	[RoomType("Lobby12")]
+	[RoomType("Lobby13")]
 	public class EELGameCode : Game<LobbyPlayer> {
 		WorldInfo info = new WorldInfo();
 
