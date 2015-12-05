@@ -50,9 +50,9 @@ namespace EE_CM
 	}
 
 #if INDEV
-	[RoomType("Indev13")]
+	[RoomType("Indev14")]
 #else
-	[RoomType("Game13")]
+	[RoomType("Game14")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -539,6 +539,7 @@ namespace EE_CM
 						if (b >= 400 && b <= 405) edit = true;	// Materials
 						if (b >= 406 && b <= 411) edit = true;	// Wall
 						if (b >= 412 && b <= 414) edit = true;	// Winter
+						if (b >= 415 && b <= 422) edit = true;	// Wood
 
 
 						// Decoration
