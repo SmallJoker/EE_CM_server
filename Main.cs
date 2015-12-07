@@ -1029,19 +1029,20 @@ namespace EE_CM
 
 				if (msg[0] == '/') {
 					#region header
-					string[] tmp_c = msg.Split(' ');
+					string[] args = msg.Split(' ');
 					int length = 0;
-					string[] args = new string[20];
-					for (int i = 0; i < tmp_c.Length; i++) {
-						if (tmp_c[i] != "") {
-							args[length] = tmp_c[i];
+
+					for (int i = 0; i < args.Length; i++) {
+						if (args[i] != "")
 							length++;
+					}
+
+					if (args.Length < 10) {
+						Array.Resize(ref args, 10);
+						for (int i = length; i < args.Length; i++) {
+							args[i] = "";
 						}
 					}
-					for (int i = length; i < args.Length; i++) {
-						args[i] = "";
-					}
-					tmp_c = null;
 					#endregion
 
 					#region /commands
@@ -1600,12 +1601,16 @@ namespace EE_CM
 						args[1] = args[1].ToLower();
 						bool found = false;
 						string content = "";
-						for (int i = 2; i < length && content.Length < W_chatLimit; i++) {
-							content += args[i] + " ";
+						for (int i = 2; i < args.Length; i++) {
+							if (args[i] != "")
+								content += args[i] + " ";
+
+							if (content.Length > W_chatLimit) {
+								content = content.Remove(W_chatLimit);
+								break;
+							}
 						}
-						if (content.Length > W_chatLimit) {
-							content = content.Remove(W_chatLimit);
-						}
+
 						content = info.check_Censored(content);
 
 						handle_spam(pl, content);
@@ -1624,11 +1629,10 @@ namespace EE_CM
 							}
 						}
 
-						if (found) {
+						if (found)
 							pl.Send("write", "*" + args[1].ToUpper(), content);
-						} else {
+						else
 							pl.Send("write", SYS, "Unknown username or you are on the players mute list.");
-						}
 						#endregion
 						return;
 					}
