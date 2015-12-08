@@ -1771,9 +1771,10 @@ namespace EE_CM
 							set_setting(pl, newValue, ref W_experimental_saving, "Experimental DB saving");
 							break;
 						default:
-							pl.Send("write", SYS, "");
+							pl.Send("write", SYS, "Unknown setting `" + args[1].ToLower() + "´. See `help all´");
 							break;
 						}
+						return;
 						#endregion;
 					}
 					if (args[0] == "/help" && length == 1) {
