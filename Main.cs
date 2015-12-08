@@ -56,7 +56,7 @@ namespace EE_CM
 #endif
 	public class EENGameCode : Game<Player>
 	{
-		#region define
+		#region Definition of block arrays and world data
 		Bindex[,] blocks;
 		Block[,] Nblock;
 		Block[, ,] PBlock;
@@ -86,7 +86,8 @@ namespace EE_CM
 			isEditBlocked = false,
 			W_resized = false,
 			W_can_save = false,
-			W_experimental_saving = false;
+			W_experimental_saving = false,
+			W_canRespawn = true;
 
 		int W_width, W_height, W_plays,
 			W_crown = -1,
@@ -1033,16 +1034,18 @@ namespace EE_CM
 					int length = 0;
 
 					for (int i = 0; i < args.Length; i++) {
+						if (i != length)
+							args[length] = args[i];
+
 						if (args[i] != "")
 							length++;
 					}
 
-					if (args.Length < 10) {
+					if (args.Length < 10)
 						Array.Resize(ref args, 10);
-						for (int i = length; i < args.Length; i++) {
-							args[i] = "";
-						}
-					}
+
+					for (int i = length; i < args.Length; i++)
+						args[i] = "";
 					#endregion
 
 					#region /commands
@@ -1559,17 +1562,26 @@ namespace EE_CM
 						return;
 					}
 					if (args[0] == "/respawn") {
-						#region respawn player
+						#region Respawn player
+						if (!W_canRespawn && get_rights(pl) < Rights.Admin) {
+							pl.Send("write", SYS, "The respawn privilege is deactivated. You can not respawn.");
+							return;
+						}
+						string name = "";
 						if (length > 1) {
 							if (!hasAccess(pl, Rights.Admin)) return;
-							args[1] = args[1].ToLower();
-						} else args[1] = pl.Name;
+
+							name = args[1].ToLower();
+						} else {
+							name = pl.Name;
+						}
 
 						bool found = false;
 						parseSpawns();
 						foreach (Player p in Players) {
-							if (p.Name != args[1]) continue;
-							if (p.god_mode || p.mod_mode) continue;
+							if (p.Name != name || p.god_mode || p.mod_mode)
+								continue;
+
 							found = true;
 							p.cPointX = -1;
 							p.cPointY = -1;
@@ -1578,7 +1590,9 @@ namespace EE_CM
 							p.posY = c.y * 16;
 							Broadcast("tele", false, p.Id, p.posX, p.posY);
 						}
-						if (!found) pl.Send("write", SYS, "Unknown username or player is god/mod");
+
+						if (!found)
+							pl.Send("write", SYS, "Unknown username or the player is in god/mod mode.");
 						#endregion
 						return;
 					}
@@ -1602,8 +1616,7 @@ namespace EE_CM
 						bool found = false;
 						string content = "";
 						for (int i = 2; i < args.Length; i++) {
-							if (args[i] != "")
-								content += args[i] + " ";
+							content += args[i] + " ";
 
 							if (content.Length > W_chatLimit) {
 								content = content.Remove(W_chatLimit);
@@ -1621,40 +1634,48 @@ namespace EE_CM
 						}
 
 						foreach (Player p in Players) {
-							if (p.Name == args[1]) {
-								if (!p.muted.Contains(pl.Name)) {
-									found = true;
-									p.Send("write", "*" + pl.Name.ToUpper(), content);
-								}
+							if (p.Name == args[1] && !p.muted.Contains(pl.Name)) {
+								found = true;
+								p.Send("write", "*" + pl.Name.ToUpper(), content);
 							}
 						}
 
 						if (found)
 							pl.Send("write", "*" + args[1].ToUpper(), content);
 						else
-							pl.Send("write", SYS, "Unknown username or you are on the players mute list.");
+							pl.Send("write", SYS, "Unknown username or the message receiver muted you.");
 						#endregion
 						return;
 					}
 					if (args[0] == "/mute") {
 						if (!hasAccess(pl, Rights.Normal, length > 1)) return;
 						#region mute
-						args[1] = args[1].ToLower();
-						if (pl.muted.Contains(args[1])) {
+						string name = args[1].ToLower();
+						if (pl.muted.Contains(name)) {
 							pl.Send("write", SYS, "This player is already muted.");
 							return;
 						}
+
+						bool notify = true;
+						if (get_rights(pl) >= Rights.Moderator) {
+							if (length >= 3 && is_yes(args[2]))
+								notify = false;
+						}
+
 						bool found = false;
 						foreach (Player p in Players) {
-							if (p.Name == args[1]) {
-								p.Send("write", SYS, pl.Name.ToUpper() + " muted you.");
+							if (p.Name == name) {
+								if (notify)
+									p.Send("write", SYS, pl.Name.ToUpper() + " muted you.");
 								found = true;
 							}
 						}
 						if (found) {
-							pl.muted.Add(args[1]);
-							pl.Send("write", SYS, "The messages from " + args[1].ToUpper() + " will be invisible for you now.");
-						} else pl.Send("write", SYS, "Unknown username");
+							pl.muted.Add(name);
+							pl.Send("write", SYS, "All further messages from " + name.ToUpper() + " will be hidden from you.");
+						} else {
+							pl.Send("write", SYS, "Unknown username");
+						}
 						#endregion
 						return;
 					}
@@ -1673,20 +1694,6 @@ namespace EE_CM
 							}
 						}
 						pl.Send("write", SYS, "The messages from " + args[1].ToUpper() + " will be visible for you again.");
-						#endregion
-						return;
-					}
-					if (args[0] == "/texts") {
-						if (!hasAccess(pl, Rights.Admin, length > 1)) return;
-						#region text
-						if (is_yes(args[1]) == !W_allowText) {
-							W_allowText = !W_allowText;
-							string txt = (W_allowText ? "" : "dis") + "allowed";
-							addLog(pl.Name, txt + " texts");
-							Broadcast("write", SYS, "Texts are now " + txt);
-						} else {
-							pl.Send("write", SYS, "Texts are already " + (W_allowText ? "" : "dis") + "allowed");
-						}
 						#endregion
 						return;
 					}
@@ -1720,24 +1727,59 @@ namespace EE_CM
 						pl.Send("write", SYS, "Unknown username.");
 						return;
 					}
-					if (args[0] == "/db_save_experimental") {
-						if (!hasAccess(pl, Rights.Owner, length > 1)) return;
-						#region Experimental DB saving
-						if (is_yes(args[1]) != W_experimental_saving) {
-							W_experimental_saving = !W_experimental_saving;
-							string txt = (W_experimental_saving ? "en" : "dis") + "abled";
-							addLog(pl.Name, txt + " the experimental DB saving");
-							Broadcast("write", SYS, "Experimental DB saving: " + txt.ToUpper());
-						} else {
-							pl.Send("write", SYS, "Experimental DB saving is already " + (W_experimental_saving ? "en" : "dis") + "abled");
+					if (args[0] == "/set") {
+						if (!hasAccess(pl, Rights.Admin, length > 2))
+							return;
+						#region Change a boolean world setting
+
+						if (args[1].ToLower() == "help") {
+							string ret = "Unknown setting `" + args[2].ToLower() + "´. See `help all´";
+							switch (args[2].ToLower()) {
+							case "all":
+								ret = "respawn, text, save_experimental";
+								break;
+							case "respawn":
+								ret = "The permission for regular players to use the /respawn command.";
+								break;
+							case "text":
+							case "texts":
+								ret = "The permission to place text blocks in the world.";
+								break;
+							case "save_experimental":
+								ret = "Feature to saves the world as a (up to) 10 times file. [Owner rank]";
+								break;
+							}
+
+							pl.Send("write", SYS, ret);
+							return;
 						}
-						#endregion
-						return;
+
+						bool newValue = is_yes(args[2]);
+
+						switch(args[1].ToLower()){
+						case "respawn":
+							set_setting(pl, newValue, ref W_canRespawn, "Respawn privilege");
+							break;
+						case "text":
+						case "texts":
+							set_setting(pl, newValue, ref W_allowText, "Text blocks");
+							break;
+						case "save_experimental":
+							if (!hasAccess(pl, Rights.Owner))
+								return;
+
+							set_setting(pl, newValue, ref W_experimental_saving, "Experimental DB saving");
+							break;
+						default:
+							pl.Send("write", SYS, "");
+							break;
+						}
+						#endregion;
 					}
 					if (args[0] == "/help" && length == 1) {
-						#region help
+						#region Output this huge commands list
 						Rights level = get_rights(pl);
-						string lMgr = "Level Managing: /getblockinfo (/gbi)" + (W_isSaved ? ", /list admins" : ""),
+						string lMgr = "Level Managing: /getblockinfo, /gbi" + (W_isSaved ? ", /list admins" : ""),
 							pSpec = "\n\nPlayer specific: /respawn, /woot, /rankof [name], /mute [name], /unmute [name], /list mutes",
 							cTool = "\n\nOther tools: /pm [name] [text], /teleport {[name], [x] [y]}";
 						if (level >= Rights.Vigilant) {
@@ -1746,12 +1788,12 @@ namespace EE_CM
 						}
 
 						if (level >= Rights.Admin) {
-							lMgr += ", /clear, /reset, /log, /texts [on/off], /loadlevel";
+							lMgr += ", /clear, /reset, /log, /set help all, /loadlevel";
 							pSpec += ", /kill [name], /giveedit [name], /removeedit [name], /respawn [name]";
 							cTool += ", /teleport [name] {[to_name], [x] [y]}";
 						}
 						if (level >= Rights.Owner) {
-							lMgr += ", /resize_this_world, /db_save_experimental [on/off], /killroom" + (W_isSaved ? ", /addadmin [name], /rmadmin [name]" : "");
+							lMgr += ", /resize_this_world, /killroom" + (W_isSaved ? ", /addadmin [name], /rmadmin [name]" : "");
 						}
 						if (level == Rights.Moderator) {
 							lMgr += ", /code [text], /name [text]";
@@ -1765,12 +1807,28 @@ namespace EE_CM
 					if (args[0] == "/help" && length > 1) {
 						#region detailed help
 						string cmd = args[1].ToLower();
-						if (cmd.StartsWith("/")) cmd = cmd.Remove(0, 1);
-						string ret = "Information for command '" + cmd + "' not found";
+						if (cmd.StartsWith("/"))
+							cmd = cmd.Remove(0, 1);
+						
+						string ret = "There are no information for the command `" + cmd + "´.";
 						switch (cmd) {
-						case "getblockinfo":
-						case "gbi":
-							ret = "Gets the block information from the one you click on. [Edit needed]";
+						case "ban":
+							ret = "Bans a player until world closes, that player can not join the world anymore. [Admin rank]";
+							break;
+						case "unban":
+							ret = "Unbans a banned player. [Admin rank]";
+							break;
+						case "giveedit":
+							ret = "Gives edit to a player. [Admin rank]";
+							break;
+						case "removeedit":
+							ret = "Removes edit from a player. [Admin rank]";
+							break;
+						case "mute":
+							ret = "Mutes a player.";
+							break;
+						case "unmute":
+							ret = "Removes a player from your mute list.";
 							break;
 						case "admins":
 							ret = "Admins can save, load and clear, they also can access to normal world owner commands.";
@@ -1781,14 +1839,34 @@ namespace EE_CM
 						case "rmadmin":
 							ret = "Removes a player from the list of admins. [Owner rank]";
 							break;
-						case "resize_this_world":
-							ret = "Resizes the current world. [Owner rank]";
-							break;
+
 						case "clear":
 							ret = "Clears the current world. [Admin rank]";
 							break;
-						case "reset":
-							ret = "Resets all players to the spawn points. [Admin rank]";
+						case "code":
+							ret = "Changes code without logbook entry. [Moderator rank]";
+							break;
+						case "getblockinfo":
+						case "gbi":
+							ret = "Gets the block information from the one you click on. [Edit needed]";
+							break;
+						case "getip":
+							ret = "Gets the IP of the given player. [Moderator rank]";
+							break;
+						case "info":
+							ret = "Shows up an info box. [Moderator rank]";
+							break;
+						case "kick":
+							ret = "Kicks a player from the world. Use /ban to keep them off. [Vigilant/Admin rank]";
+							break;
+						case "kill":
+							ret = "Kills a player - Player gets teleported to the last checkpoint or spawn. [Admin rank]";
+							break;
+						case "killroom":
+							ret = "Kills the world. [Owner rank]";
+							break;
+						case "list":
+							ret = "Returns you a specific list. Available lists: ban, admin, mute";
 							break;
 						case "loadlevel":
 							ret = "Loads the saved world. [Admin rank]";
@@ -1796,41 +1874,26 @@ namespace EE_CM
 						case "log":
 							ret = "Returns you a detailed logbook of the world-changes with up to 5 entries.";
 							break;
-						case "list":
-							ret = "Returns you a specific list. Available lists: ban(s), admin(s), mute(s).";
-							break;
-						case "mute":
-							ret = "Mutes a player.";
-							break;
-						case "unmute":
-							ret = "Removes a player from your mute list.";
+						case "name":
+							ret = "Changes the world name without logbook entry. [Moderator rank]";
 							break;
 						case "pm":
 							ret = "Sends a private message to a player.";
 							break;
-						case "kick":
-							ret = "Kicks a player from the world. Use /ban to keep them off. [Vigilant/Admin rank]";
+						case "rankof":
+							ret = "Gets the rank of a player.";
 							break;
-						case "ban":
-							ret = "Bans a player until world closes, that player can not join the world anymore. [Admin rank]";
+						case "reset":
+							ret = "Resets all players to the spawn points. [Admin rank]";
 							break;
-						case "unban":
-							ret = "Unbans a banned player. [Admin rank]";
-							break;
-						case "kill":
-							ret = "Kills a player - Player gets teleported to the last checkpoint or spawn. [Admin rank]";
-							break;
-						case "giveedit":
-							ret = "Gives edit to a player. [Admin rank]";
-							break;
-						case "removeedit":
-							ret = "Removes edit from a player. [Admin rank]";
+						case "resize_this_world":
+							ret = "Resizes the current world. [Owner rank]";
 							break;
 						case "respawn":
 							ret = "Respawns you or another player to the spawn point.";
 							break;
-						case "woot":
-							ret = "Gives a woot to the world, they do not save.";
+						case "set":
+							ret = "Sets a boolean world setting. See `/set help all´. [Admin rank]";
 							break;
 						case "teleport":
 							ret = "Teleport has many diffrent uses: /teleport \n";
@@ -1838,32 +1901,11 @@ namespace EE_CM
 							ret += " [name] [to_name] - Teleports a player to another.";
 							ret += " [x] [y] - Teleports you to the given coordinates.";
 							break;
-						case "texts":
-							ret = "Allows or disallows putting texts in a world. [Admin rank]";
-							break;
-						case "killroom":
-							ret = "Kills the world. [Owner rank]";
-							break;
-						case "getip":
-							ret = "Gets the IP of the given player. [Moderator rank]";
-							break;
 						case "write":
 							ret = "Writes as a defined player in the world a message. [Moderator rank]";
 							break;
-						case "name":
-							ret = "Changes the world name without logbook entry. [Moderator rank]";
-							break;
-						case "info":
-							ret = "Shows up an info box. [Moderator rank]";
-							break;
-						case "code":
-							ret = "Changes code without logbook entry. [Moderator rank]";
-							break;
-						case "rankof":
-							ret = "Gets the rank of a player.";
-							break;
-						case "db_save_experimental":
-							ret = "Saves the world in a (up to) 10 times smaller database entry - Experimental [Owner rank]";
+						case "woot":
+							ret = "Gives a woot to the world, they do not save.";
 							break;
 						}
 						pl.Send("write", SYS, ret);
@@ -3294,6 +3336,19 @@ namespace EE_CM
 				break;
 			}
 			return isyes;
+		}
+		void set_setting(Player p, bool newValue, ref bool setting, string description)
+		{
+			if (newValue != setting) {
+				setting ^= true;
+				string text = description + ": " + (setting ? "ON" : "OFF");
+
+				addLog(p.Name, text);
+				Broadcast("write", SYS, text + " (" + p.Name.ToUpper() + ")");
+				return;
+			}
+
+			p.Send("write", SYS, "Nothing to change for setting `" + description + "´. It already was set to: " + (setting ? "ON" : "OFF"));
 		}
 		long getMTime()
 		{
