@@ -1609,13 +1609,12 @@ namespace EE_CM
 						RoomData.Save();
 						return;
 					}
-					if (args[0] == "/pm") {
-						if (!hasAccess(pl, Rights.Normal, length > 2)) return;
-						#region pm
-						args[1] = args[1].ToLower();
-						bool found = false;
+
+					if (args[0] == "/me") {
+						if (!hasAccess(pl, Rights.Normal, length > 1)) return;
+						#region action
 						string content = "";
-						for (int i = 2; i < args.Length; i++) {
+						for (int i = 1; i < length; i++) {
 							content += args[i] + " ";
 
 							if (content.Length > W_chatLimit) {
@@ -1623,6 +1622,40 @@ namespace EE_CM
 								break;
 							}
 						}
+
+						if (content == "")
+							return;
+
+						content = info.check_Censored(content);
+
+						handle_spam(pl, content);
+
+						if (pl.sameText > 4 || pl.say_counter > 3) {
+							pl.Send("write", SYS, "You try to spam, please be nice!");
+							return;
+						}
+
+						Broadcast("write", "* WORLD", pl.Name.ToUpper() + " " + content);
+						#endregion
+						return;
+					}
+					if (args[0] == "/pm") {
+						if (!hasAccess(pl, Rights.Normal, length > 2)) return;
+						#region pm
+						args[1] = args[1].ToLower();
+						bool found = false;
+						string content = "";
+						for (int i = 2; i < length; i++) {
+							content += args[i] + " ";
+
+							if (content.Length > W_chatLimit) {
+								content = content.Remove(W_chatLimit);
+								break;
+							}
+						}
+
+						if (content == "")
+							return;
 
 						content = info.check_Censored(content);
 
@@ -1782,7 +1815,7 @@ namespace EE_CM
 						Rights level = get_rights(pl);
 						string lMgr = "Level Managing: /getblockinfo, /gbi" + (W_isSaved ? ", /list admins" : ""),
 							pSpec = "\n\nPlayer specific: /respawn, /woot, /rankof [name], /mute [name], /unmute [name], /list mutes",
-							cTool = "\n\nOther tools: /pm [name] [text], /teleport {[name], [x] [y]}";
+							cTool = "\n\nOther tools: /pm [name] [text], /teleport {[name], [x] [y]}, /me [text]";
 						if (level >= Rights.Vigilant) {
 							lMgr += ", /ban [name], /unban [name], /list bans";
 							pSpec += ", /kick [name] [reason]";
@@ -1874,6 +1907,9 @@ namespace EE_CM
 							break;
 						case "log":
 							ret = "Returns you a detailed logbook of the world-changes with up to 5 entries.";
+							break;
+						case "me":
+							ret = "Outputs a message from 3rd person perspective.";
 							break;
 						case "name":
 							ret = "Changes the world name without logbook entry. [Moderator rank]";
