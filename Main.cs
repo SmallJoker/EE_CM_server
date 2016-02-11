@@ -361,7 +361,7 @@ namespace EE_CM
 				m.Type == "clear" ||
 				m.Type == "save") {
 
-				if (pl.isOwner && !W_isLoading) {
+				if (pl.isAdmin && !W_isLoading) {
 					OwnerInteract(pl, m);
 				}
 				return;
@@ -544,7 +544,7 @@ namespace EE_CM
 
 
 						// Decoration
-						if (b == 103 && (pl.isOwner || pl.isModerator)) {
+						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
 							edit = true; // Codeblock
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used > 2)
@@ -559,7 +559,7 @@ namespace EE_CM
 							}
 						}
 						if (b == 105) edit = true; // Hazard (Spikes)
-						if ((b == 106 || b == 107) && pl.isOwner) {
+						if ((b == 106 || b == 107) && pl.isAdmin) {
 							edit = true; // Trophy
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used >= 1)
@@ -580,7 +580,7 @@ namespace EE_CM
 						if (b >= 224 && b <= 226) edit = true;	// Halloween 2011
 						if (b >= 228 && b <= 232) edit = true;	// Summer 2011
 						if (b >= 233 && b <= 240) edit = true;	// Spring 2011 Grass
-						if (b == 241 && pl.isOwner) {
+						if (b == 241 && pl.isAdmin) {
 							edit = true; // Diamond
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used > 10)
@@ -589,7 +589,7 @@ namespace EE_CM
 						}
 						if (b >= 244 && b <= 248) edit = true; // New year 2010
 						if (b >= 249 && b <= 254) edit = true; // Christmas 2010
-						if (b == 255 && (pl.isOwner || pl.isModerator)) {
+						if (b == 255 && (pl.isAdmin || pl.isModerator)) {
 							edit = true; // Spawnpoint
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used > 60)
@@ -675,7 +675,7 @@ namespace EE_CM
 					#region Text
 					if (b == bl.FG || m.Count != 5 || l != 0)
 						return;
-					if (!pl.isModerator && !pl.isOwner && !W_allowText)
+					if (!pl.isModerator && !pl.isAdmin && !W_allowText)
 						return;
 
 					string text = info.check_Censored(m.GetString(4));
@@ -748,7 +748,7 @@ namespace EE_CM
 					if (b == bl.FG && arg3 == bl.arg3)
 						return;
 
-					bool valid = (b == 43) ? pl.isOwner : true;
+					bool valid = (b == 43) ? pl.isAdmin : true;
 					if (arg3 < 0 || arg3 >= 100 || !valid)
 						return;
 
@@ -764,7 +764,7 @@ namespace EE_CM
 
 					block_msg = Message.Create((b == 43) ? "bc" : "bs", x, y, b, arg3);
 					#endregion
-				} else if (b == 242 && (pl.isOwner || pl.isModerator)) {
+				} else if (b == 242 && (pl.isAdmin || pl.isModerator)) {
 					#region Portals
 					if (m.Count != 7 || l != 0)
 						return;
@@ -889,7 +889,7 @@ namespace EE_CM
 		void GamePlayFunc(Player pl, Message m)
 		{
 			if (m.Type == "god" && pl.canEdit && m.Count == 1) {
-				if (!W_isOpen || pl.isOwner || pl.isModerator) {
+				if (!W_isOpen || pl.isAdmin || pl.isModerator) {
 					Broadcast("god", pl.Id, m.GetBoolean(0));
 					pl.god_mode = m.GetBoolean(0);
 				}
@@ -976,7 +976,7 @@ namespace EE_CM
 				W_key = m.GetString(0);
 				Broadcast("lostaccess");
 				foreach (Player p in Players) {
-					if (!p.isOwner) {
+					if (!p.isAdmin) {
 						p.code_tries = 0;
 						p.god_mode = false;
 						p.canEdit = false;
@@ -1193,7 +1193,7 @@ namespace EE_CM
 						bool found = false;
 						foreach (Player p in Players) {
 							if (p.Name == args[1]) {
-								if (!p.isOwner && p.canEdit) {
+								if (!p.isAdmin && p.canEdit) {
 									found = true;
 									p.canEdit = false;
 									p.god_mode = false;
@@ -1255,7 +1255,9 @@ namespace EE_CM
 						if (found) {
 							banned.Add(player_name);
 							Broadcast("write", SYS, pl.Name + " banned " + player_name);
-						} else pl.Send("write", SYS, "Unknown username, player is owner or moderator");
+						} else {
+							pl.Send("write", SYS, "Unknown username, player is owner or moderator");
+						}
 						#endregion
 						return;
 					}
@@ -1280,7 +1282,7 @@ namespace EE_CM
 
 						string userId = "";
 						foreach (Player p in Players) {
-							if (!p.isOwner && !p.isVigilant && !p.isModerator) {
+							if (!p.isAdmin && !p.isVigilant && !p.isModerator) {
 								p.Send("info", "Banned", "This account has been banned from EE CM." +
 									"Please wait " + ban_time +
 									" hours until your ban expires.");
@@ -1348,47 +1350,57 @@ namespace EE_CM
 						#region addadmin
 						bool found = false;
 						args[1] = args[1].ToLower();
+						if (admins.Contains(args[1]) ||
+								args[1] == W_Owner || args[1] == "x." + W_Owner) {
+							pl.Send("write", SYS, "Player '" + args[1].ToUpper() + "' is already an admin.");
+							return;
+						}
+
 						foreach (Player p in Players) {
-							if (p.Name == args[1] && !p.isOwner) {
+							if (p.Name == args[1] && !p.isAdmin) {
 								found = true;
-								if (!admins.Contains(p.Name)) {
-									admins.Add(p.Name);
-								}
-								p.Send("write", SYS, "You are now an admin of this world. Rejoin to use the features.");
+								p.Send("write", SYS, "You are now an admin of this world. Please rejoin.");
 							}
 						}
 						if (found) {
 							pl.Send("write", SYS, args[1].ToUpper() + " is now an admin.");
-						} else pl.Send("write", SYS, "Unknown username or player is already admin");
+							admins.Add(args[1]);
+						} else {
+							PlayerIO.BigDB.Load("Usernames", args[1], delegate(DatabaseObject obj) {
+								if (obj.ExistsInDatabase) {
+									pl.Send("write", SYS, args[1].ToUpper() + " is now an admin.");
+									admins.Add(args[1]);
+								} else {
+									pl.Send("write", SYS, "Unknown username");
+								}
+							});
+						}
 						#endregion
 						return;
 					}
 					if (args[0] == "/rmadmin") {
 						if (!hasAccess(pl, Rights.Owner, length > 1)) return;
 						#region rmadmin
-						bool found = false;
 						args[1] = args[1].ToLower();
-						if (args[1] != "x." + W_Owner && args[1] != W_Owner) {
-							if (admins.Contains(args[1])) {
-								found = true;
-								admins.Remove(args[1]);
-							}
-						}
-						if (found) {
+
+						if (admins.Contains(args[1])) {
+							admins.Remove(args[1]);
 							foreach (Player p in Players) {
 								if (p.Name == args[1]) {
-									p.isOwner = false;
-									p.Send("write", SYS, "Your admin rights got removed.");
+									p.isAdmin = false;
+									p.Send("write", SYS, "Your admin rank was removed.");
 								}
 							}
 							pl.Send("write", SYS, args[1].ToUpper() + " is no longer an admin.");
-						} else pl.Send("write", SYS, "Unknown username or player is already admin");
+						} else {
+							pl.Send("write", SYS, "Unknown username or player is not an admin");
+						}
 						#endregion
 						return;
 					}
 					if (args[0] == "/teleport") {
 						if (!hasAccess(pl, Rights.Edit, length > 1)) return;
-						if (W_isOpen && !pl.isModerator && !pl.isOwner) {
+						if (W_isOpen && !pl.isModerator && !pl.isAdmin) {
 							pl.Send("write", SYS, "You can not teleport in an open world.");
 							return;
 						}
@@ -1522,7 +1534,7 @@ namespace EE_CM
 						bool found = false;
 						args[1] = args[1].ToLower();
 						foreach (Player p in Players) {
-							if (p.Name == args[1] && !p.isOwner) {
+							if (p.Name == args[1] && !p.isAdmin) {
 								found = true;
 								pl.Send("write", SYS, args[1] + "'s IP: " + p.IPAddress.ToString());
 								break;
@@ -1552,7 +1564,7 @@ namespace EE_CM
 					#endregion
 					if (args[0] == "/killroom") {
 						if (!hasAccess(pl, Rights.Owner)) return;
-						Broadcast("info", "World Killed", "This world has been killed by " + (pl.isOwner ? "the owner" : " a moderator"));
+						Broadcast("info", "World Killed", "This world has been killed by " + (pl.isAdmin ? "the owner" : " a moderator"));
 						foreach (Player p in Players) {
 							p.Disconnect();
 						}
@@ -1789,7 +1801,7 @@ namespace EE_CM
 
 						bool newValue = is_yes(args[2]);
 
-						switch(args[1].ToLower()){
+						switch (args[1].ToLower()) {
 						case "respawn":
 							set_setting(pl, newValue, ref W_canRespawn, "Respawn privilege");
 							break;
@@ -1843,7 +1855,7 @@ namespace EE_CM
 						string cmd = args[1].ToLower();
 						if (cmd.StartsWith("/"))
 							cmd = cmd.Remove(0, 1);
-						
+
 						string ret = "There are no information for the command `" + cmd + "´.";
 						switch (cmd) {
 						case "ban":
@@ -2041,7 +2053,7 @@ namespace EE_CM
 					pl.mWarns--;
 
 				bool skip_send = false,
-					has_gravity = !pl.god_mode && !pl.mod_mode && !pl.isOwner;
+					has_gravity = !pl.god_mode && !pl.mod_mode && !pl.isAdmin;
 				#region anti-cheat
 				if (has_gravity) {
 					bool valid = false;
@@ -2695,7 +2707,7 @@ namespace EE_CM
 				if (kick_all) {
 					W_resized = true;
 					foreach (Player p in Players) {
-						p.isOwner = false;
+						p.isAdmin = false;
 						p.canEdit = false;
 						p.say_counter = 99;
 						p.mWarns = 99;
@@ -2941,7 +2953,7 @@ namespace EE_CM
 				if (W_Owner == pl.Name ||
 					("x." + W_Owner) == pl.Name ||
 					(admins.Contains(pl.Name) && W_isSaved)) {
-					pl.isOwner = true;
+					pl.isAdmin = true;
 					pl.canEdit = true;
 				}
 				if (!spawns_parsed) {
@@ -2954,8 +2966,8 @@ namespace EE_CM
 
 				bool W_isTutorial = false;
 				Message M_init = Message.Create("init", W_Owner, W_title, W_plays.ToString(), derot13(W_rot13),
-					pl.Id, pl.posX, pl.posY, pl.Name, pl.canEdit, pl.isOwner,
-					W_width, W_height, W_isTutorial && !pl.isModerator && !pl.isOwner);
+					pl.Id, pl.posX, pl.posY, pl.Name, pl.canEdit, pl.isAdmin,
+					W_width, W_height, W_isTutorial && !pl.isModerator && !pl.isAdmin);
 
 				if (pl.init_binary) {
 					if (binary_data == null)
@@ -3234,7 +3246,7 @@ namespace EE_CM
 		{
 			if (p.isModerator) return Rights.Moderator;
 			if (p.Name == W_Owner || p.Name == "x." + W_Owner) return Rights.Owner;
-			if (p.isOwner) return Rights.Admin;
+			if (p.isAdmin) return Rights.Admin;
 			if (p.isVigilant) return Rights.Vigilant;
 			if (!p.isGuest) return Rights.Normal;
 			return Rights.None;

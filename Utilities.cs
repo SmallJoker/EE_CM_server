@@ -49,7 +49,7 @@ namespace EE_CM
 				   keyX = 0,
 				   keyY = 0;
 
-		public bool isOwner = false,
+		public bool isAdmin = false,
 					isModerator = false,
 					isVigilant = false,
 					isGuest = false,
