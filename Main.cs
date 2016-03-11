@@ -35,7 +35,7 @@ namespace EE_CM
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
-		SMILIES = 54
+		SMILIES = 55
 	}
 
 	enum Rights
@@ -50,9 +50,9 @@ namespace EE_CM
 	}
 
 #if INDEV
-	[RoomType("Indev14")]
+	[RoomType("Indev")]
 #else
-	[RoomType("Game14")]
+	[RoomType("Game16")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -541,6 +541,8 @@ namespace EE_CM
 						if (b >= 406 && b <= 411) edit = true;	// Wall
 						if (b >= 412 && b <= 414) edit = true;	// Winter
 						if (b >= 415 && b <= 422) edit = true;	// Wood
+						if (b >= 423 && b <= 425) edit = true;	// Marble
+						if (b == 426 || b == 427) edit = true;	// Granite
 
 
 						// Decoration
