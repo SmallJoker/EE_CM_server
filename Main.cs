@@ -2056,6 +2056,7 @@ namespace EE_CM
 
 				bool skip_send = false,
 					has_gravity = !pl.god_mode && !pl.mod_mode && !pl.isAdmin;
+
 				#region anti-cheat
 				if (has_gravity) {
 					bool valid = false;
@@ -2066,6 +2067,7 @@ namespace EE_CM
 								gY = 2;
 							byte dir = 1; // 0 = none; 1 = updown; 2 = leftright;
 							bool is_liquid = false;
+
 							switch (bl) {
 							case 1:
 								gX = -2;
@@ -2101,13 +2103,16 @@ namespace EE_CM
 								break;
 							}
 						}
-						if (valid) break;
+						if (valid)
+							break;
 					}
-					if (!valid) pl.mWarns += 8;
+					if (!valid)
+						pl.mWarns += 8;
 				}
 
 				foreach (Player p in Players) {
-					if (p.Id == pl.Id || (skip_send && !p.isBot)) continue;
+					if (p.Id == pl.Id || (skip_send && !p.isBot))
+						continue;
 					p.Send("m", pl.Id, pl.posX, pl.posY, pl.speedX, pl.speedY,
 								gravityX, gravityY, keyX, keyY);
 				}
@@ -2121,9 +2126,11 @@ namespace EE_CM
 								break;
 							}
 						}
-						if (isBoost) break;
+						if (isBoost)
+							break;
 					}
-					if (!isBoost) pl.mWarns += 8;
+					if (!isBoost)
+						pl.mWarns += 8;
 				}
 				#endregion
 				#endregion
@@ -2198,11 +2205,12 @@ namespace EE_CM
 			#region Define variables
 			MemoryStream stream = new MemoryStream();
 			BinaryWriter writer = new BinaryWriter(stream);
-			writer.Write(0xC0FFEE02);
+			writer.Write(0xC0FFEE03);
 
 			SaveEntry last = new SaveEntry(),
 				cur = new SaveEntry();
 			#endregion
+			writer.Write((ushort)W_width);
 
 			for (; cur.y < W_height; cur.y++) {
 				cur.x = 0;
@@ -2355,8 +2363,16 @@ namespace EE_CM
 			#region Define variables
 			MemoryStream stream = new MemoryStream(data);
 			BinaryReader reader = new BinaryReader(stream);
-			if (reader.ReadUInt32() != 0xC0FFEE02)
-				throw new Exception("Can not get coffee V02");
+
+			uint signature = reader.ReadUInt32();
+			if (signature < 0xC0FFEE02 || signature > 0xC0FFEE03)
+				throw new Exception("Invalid data signature, got: " + signature.ToString("X4"));
+
+			int t_width = W_width;
+
+			if (signature >= 0xC0FFEE03) {
+				t_width = reader.ReadUInt16();
+			}
 
 			SaveEntry cur = new SaveEntry(),
 				next = new SaveEntry();
@@ -2370,7 +2386,7 @@ namespace EE_CM
 				deserializeEntry(reader, ref next);
 
 				if (next.y == cur.y && next.x == cur.x && !first)
-					next.x = Math.Min(cur.x + 1, W_width - 1);
+					next.x = Math.Min(cur.x + 1, t_width - 1);
 				if (next.y == cur.y && next.x - cur.x < 0)
 					next.y = cur.y + 1;
 
@@ -2416,7 +2432,7 @@ namespace EE_CM
 
 					// Jump to next line
 					cur.x++;
-					if (cur.x >= W_width) {
+					if (cur.x >= t_width) {
 						cur.x = 0;
 						cur.y++;
 					}
@@ -2426,7 +2442,7 @@ namespace EE_CM
 			}
 			#region Portals
 			for (int y = 0; y < W_height; y++) {
-				for (int x = 0; x < W_width; x++) {
+				for (int x = 0; x < t_width; x++) {
 					if (blocks[x, y].FG != 242)
 						continue;
 
