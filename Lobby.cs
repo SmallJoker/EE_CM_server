@@ -22,7 +22,7 @@ using System;
 using PlayerIO.GameLibrary;
 
 namespace EE_CM {
-	[RoomType("Lobby2")]
+	[RoomType("Lobby3")]
 	public class EELGameCode : Game<LobbyPlayer> {
 		WorldInfo info = new WorldInfo();
 
@@ -85,8 +85,8 @@ namespace EE_CM {
 						break;
 					}
 				}
-				if (!allowed || username.Length < 4 || username.Length > 15) {
-					pl.Send("error", "Please choose a name with 4 to 15 letters and/or numbers.");
+				if (!allowed || username.Length < 3 || username.Length > 20) {
+					pl.Send("error", "Please choose a name with 3 to 20 letters and/or numbers.");
 					return;
 				}
 				PlayerIO.BigDB.LoadOrCreate("Usernames", username, delegate(DatabaseObject obj) {

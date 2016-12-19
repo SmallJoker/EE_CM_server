@@ -35,7 +35,7 @@ namespace EE_CM
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
-		SMILIES = 55
+		SMILIES = 58
 	}
 
 	enum Rights
@@ -52,7 +52,7 @@ namespace EE_CM
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType("Game16")]
+	[RoomType("Game26")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -204,6 +204,7 @@ namespace EE_CM
 					last_online = Math.Max(usernames[i].join_time, last_online);
 				}
 			}
+
 			if (time - last_online < 10)
 				return "You create traffic and I am a traffic light.";
 
@@ -217,10 +218,13 @@ namespace EE_CM
 				if (!(pl.PlayerObject["banned"] is bool)) {
 					long time_left = pl.PlayerObject.GetLong("banned") - getMTime();
 					if (time_left > 20) {
-						return ("This account has been banned from EE CM." +
+						TimeSpan delta_time = new TimeSpan(time_left);
+						return ("This account has been banned from EE CM.\n" +
 							"Please wait " +
-							Math.Round(time_left / (60.0 * 60), 2) +
-							" hours until your ban expires.");
+							delta_time.Hours +
+							" hour(s) and " +
+							delta_time.Minutes +
+							" minute(s) until your ban expires.");
 					}
 				} else if (pl.PlayerObject.GetBool("banned"))
 					return "This account has been banned from EE CM.";
@@ -536,14 +540,18 @@ namespace EE_CM
 						if (b >= 93 && b <= 95) edit = true;	// Ice
 						if (b >= 96 && b <= 98) edit = true;	// Gothic
 						if (b >= 100 && b <= 101) edit = true;	// Coins
-						//if (b >= 110 && b <= 111 && pl.isOwner) edit = true;
+						//if (b >= 110 && b <= 111) edit = true;
 						if (b >= 400 && b <= 405) edit = true;	// Materials
 						if (b >= 406 && b <= 411) edit = true;	// Wall
 						if (b >= 412 && b <= 414) edit = true;	// Winter
 						if (b >= 415 && b <= 422) edit = true;	// Wood
 						if (b >= 423 && b <= 425) edit = true;	// Marble
 						if (b == 426 || b == 427) edit = true;	// Granite
-
+						if (b >= 428 && b <= 438) edit = true;	// Extra Blocks
+						if (b >= 439 && b <= 446) edit = true;	// Carpet
+						if (b >= 447 && b <= 455) edit = true;	// Mario
+						if (b >= 456 && b <= 457) edit = true;	// Extra gothic blocks
+						if (b >= 458 && b <= 465) edit = true;	// Evolution
 
 						// Decoration
 						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
@@ -601,6 +609,8 @@ namespace EE_CM
 						if (b >= 256 && b <= 264) edit = true; // Swamp plants
 						if (b >= 265 && b <= 268) edit = true; // Snow and ice
 						if (b >= 269 && b <= 273) edit = true; // Gothic
+						if (b >= 274 && b <= 280) edit = true; // Prison
+						if (b >= 281 && b <= 285) edit = true; // Extra Gothic/Halloween
 
 						if (!edit)
 							return;
@@ -652,6 +662,9 @@ namespace EE_CM
 						if (b >= 560 && b <= 564) edit = true;	// Fancy
 						if (b >= 565 && b <= 568) edit = true;	// Green
 						if (b >= 569 && b <= 574) edit = true;	// Stone
+						if (b >= 575 && b <= 583) edit = true;	// Hexagonal
+						if (b == 584) edit = true;				// Extra backgrounds
+						if (b >= 585 && b <= 592) edit = true;	// Evolution
 
 						if (!edit) return;
 
@@ -1068,6 +1081,21 @@ namespace EE_CM
 						}
 						return;
 					}
+					if (args[0] == "/save") {
+						if (!hasAccess(pl, Rights.Admin)) return;
+						if (W_isOpen)
+							pl.Send("write", SYS, "You can not save open worlds.");
+						else if (W_isLoading)
+							pl.Send("write", SYS, "The world is being loaded. Please try again later.");
+						else if (!W_gotEdited)
+							pl.Send("write", SYS, "There are no changes to be saved.");
+						else {
+							addLog(pl.Name, "Saved world");
+							save_worlddata(pl);
+						}
+						return;
+					}
+
 					#region resize
 					if (args[0] == "/resize_this_world" && length == 1 && !W_isOpen) {
 						if (!hasAccess(pl, Rights.Owner)) return;
@@ -1087,7 +1115,7 @@ namespace EE_CM
 									}
 								}
 								if (W_type < 0) {
-									pl.Send("write", "* RESIZER", "Something strange happened.. contact a moderator please.");
+									pl.Send("write", "* RESIZER", "Something strange happened, contact a moderator please.");
 									return;
 								}
 								int[] newSize = info.getWorldSize(W_type);
@@ -1271,40 +1299,41 @@ namespace EE_CM
 						}
 						#region banning from EE CM
 						string player_name = args[1].ToLower();
-						bool found = false,
-							time_correct = false;
+						bool found = false;
 
-						long time_now = getMTime();
-						float ban_time = info.getInt(args[2]);
-						if (ban_time <= 0) {
-							ban_time = 0.5f;
-						} else if (ban_time > 48) {
-							ban_time = 48;
-						} else time_correct = true;
+						float ban_time = 0;
+						float.TryParse(args[2], out ban_time);
+
+						if (ban_time < 0.1 || ban_time > 72) {
+							pl.Send("write", SYS, "Please choose a value of hours between 0.1 and 72.");
+							return;
+						}
 
 						string userId = "";
 						foreach (Player p in Players) {
 							if (!p.isAdmin && !p.isVigilant && !p.isModerator) {
 								p.Send("info", "Banned", "This account has been banned from EE CM." +
 									"Please wait " + ban_time +
-									" hours until your ban expires.");
+									" hour(s) until your ban expires.");
 								p.Disconnect();
 								userId = p.ConnectUserId;
 								found = true;
 							}
 						}
-						if (!time_correct) pl.Send("write", SYS, "Invalid value of hours. Banned for " + ban_time + " hours");
 
 						if (found) {
+							long time_now = getMTime();
 							PlayerIO.BigDB.Load("PlayerObjects", userId, delegate(DatabaseObject o) {
 								if (o.Contains("banned") && o["banned"] is bool) {
 									o.Remove("banned");
 								}
-								o.Set("banned", time_now + (long)(ban_time * 60 * 60));
+								o.Set("banned", time_now + (long)(ban_time * 3600));
 								o.Save();
 							});
 							Broadcast("write", SYS, pl.Name + " banned " + player_name + " from EE CM");
-						} else pl.Send("write", SYS, "Unknown username, player is owner, vigilant or moderator");
+						} else {
+							pl.Send("write", SYS, "Unknown username, player is owner, vigilant or moderator");
+						}
 						#endregion
 						return;
 					}
@@ -1400,7 +1429,7 @@ namespace EE_CM
 						#endregion
 						return;
 					}
-					if (args[0] == "/teleport") {
+					if (args[0] == "/teleport" || args[0] == "/tp") {
 						if (!hasAccess(pl, Rights.Edit, length > 1)) return;
 						if (W_isOpen && !pl.isModerator && !pl.isAdmin) {
 							pl.Send("write", SYS, "You can not teleport in an open world.");
@@ -1468,7 +1497,7 @@ namespace EE_CM
 						#endregion
 						return;
 					}
-					if (args[0] == "/loadlevel") {
+					if (args[0] == "/loadlevel" || args[0] == "/load") {
 						if (!hasAccess(pl, Rights.Admin)) return;
 						if (W_isSaved && !W_isLoading) {
 							addLog(pl.Name, "Loaded world");
@@ -1515,12 +1544,12 @@ namespace EE_CM
 						return;
 					}
 					if (args[0] == "/code") {
-						if (!hasAccess(pl, Rights.Moderator, length > 1)) return;
+						if (!hasAccess(pl, Rights.Admin, length > 1)) return;
 						OwnerInteract(pl, Message.Create("key", args[1]));
 						return;
 					}
 					if (args[0] == "/name") {
-						if (!hasAccess(pl, Rights.Moderator, length > 1)) return;
+						if (!hasAccess(pl, Rights.Admin, length > 1)) return;
 						#region name
 						string content = "";
 						for (int i = 1; i < length; i++) {
@@ -1681,16 +1710,17 @@ namespace EE_CM
 						}
 
 						foreach (Player p in Players) {
-							if (p.Name == args[1] && !p.muted.Contains(pl.Name)) {
+							if (p.Name == args[1]) {
 								found = true;
-								p.Send("write", "*" + pl.Name.ToUpper(), content);
+								if (!p.muted.Contains(pl.Name))
+									p.Send("write", "*FROM " + pl.Name.ToUpper(), content);
 							}
 						}
 
 						if (found)
-							pl.Send("write", "*" + args[1].ToUpper(), content);
+							pl.Send("write", "*TO " + args[1].ToUpper(), content);
 						else
-							pl.Send("write", SYS, "Unknown username or the message receiver muted you.");
+							pl.Send("write", SYS, "Unknown username");
 						#endregion
 						return;
 					}
@@ -1703,17 +1733,9 @@ namespace EE_CM
 							return;
 						}
 
-						bool notify = true;
-						if (get_rights(pl) >= Rights.Moderator) {
-							if (length >= 3 && is_yes(args[2]))
-								notify = false;
-						}
-
 						bool found = false;
 						foreach (Player p in Players) {
 							if (p.Name == name) {
-								if (notify)
-									p.Send("write", SYS, pl.Name.ToUpper() + " muted you.");
 								found = true;
 							}
 						}
@@ -1735,11 +1757,6 @@ namespace EE_CM
 							return;
 						}
 						pl.muted.Remove(args[1]);
-						foreach (Player p in Players) {
-							if (p.Name == args[1]) {
-								p.Send("write", SYS, pl.Name.ToUpper() + " unmuted you.");
-							}
-						}
 						pl.Send("write", SYS, "The messages from " + args[1].ToUpper() + " will be visible for you again.");
 						#endregion
 						return;
@@ -1836,15 +1853,14 @@ namespace EE_CM
 						}
 
 						if (level >= Rights.Admin) {
-							lMgr += ", /clear, /reset, /log, /set help all, /loadlevel";
+							lMgr += ", /clear, /reset, /log, /set help all, (/load) /loadlevel, /code [text], /name [text]";
 							pSpec += ", /kill [name], /giveedit [name], /removeedit [name], /respawn [name]";
-							cTool += ", /teleport [name] {[to_name], [x] [y]}";
+							cTool += ", (/tp) /teleport [name] {[to_name], [x] [y]}";
 						}
 						if (level >= Rights.Owner) {
 							lMgr += ", /resize_this_world, /killroom" + (W_isSaved ? ", /addadmin [name], /rmadmin [name]" : "");
 						}
 						if (level == Rights.Moderator) {
-							lMgr += ", /code [text], /name [text]";
 							pSpec += ", /getip [name]";
 							cTool += ", /write [name] [text], /info [title] [text]";
 						}
@@ -1892,7 +1908,7 @@ namespace EE_CM
 							ret = "Clears the current world. [Admin rank]";
 							break;
 						case "code":
-							ret = "Changes code without logbook entry. [Moderator rank]";
+							ret = "Changes code without logbook entry. [Admin rank]";
 							break;
 						case "getblockinfo":
 						case "gbi":
@@ -1917,6 +1933,7 @@ namespace EE_CM
 							ret = "Returns you a specific list. Available lists: ban, admin, mute";
 							break;
 						case "loadlevel":
+						case "load":
 							ret = "Loads the saved world. [Admin rank]";
 							break;
 						case "log":
@@ -1926,7 +1943,7 @@ namespace EE_CM
 							ret = "Outputs a message from 3rd person perspective.";
 							break;
 						case "name":
-							ret = "Changes the world name without logbook entry. [Moderator rank]";
+							ret = "Changes the world name without logbook entry. [Admin rank]";
 							break;
 						case "pm":
 							ret = "Sends a private message to a player.";
@@ -1943,13 +1960,17 @@ namespace EE_CM
 						case "respawn":
 							ret = "Respawns you or another player to the spawn point.";
 							break;
+						case "save":
+							ret = "Saves the world. [Admin rank]";
+							break;
 						case "set":
 							ret = "Sets a boolean world setting. See `/set help all´. [Admin rank]";
 							break;
 						case "teleport":
-							ret = "Teleport has many diffrent uses: /teleport \n";
+						case "tp":
+							ret = "Possible arguments for teleport: /teleport (or /tp) \n";
 							ret += " [to_name] - Teleports you to a player.\n";
-							ret += " [name] [to_name] - Teleports a player to another.";
+							ret += " [name] [to_name] - Teleports a player to another.\n";
 							ret += " [x] [y] - Teleports you to the given coordinates.";
 							break;
 						case "write":
@@ -2009,8 +2030,6 @@ namespace EE_CM
 				foreach (Player p in Players) {
 					if (!p.isGuest && !p.muted.Contains(pl.Name))
 						p.Send("say", pl.Id, msg);
-					else
-						p.Send("say", pl.Id, "");
 				}
 				#endregion
 				return;
@@ -2047,12 +2066,13 @@ namespace EE_CM
 				if (W_isLoading || pl.moved > moveLimit)
 					return;
 
-				if (pl.mWarns >= 25) {
+				if (pl.mWarns >= 25 && !pl.isModerator) {
 					pl.Send("info", "Error", "The data from your client is not correct.");
 					pl.Disconnect();
 					return;
-				} else if (pl.mWarns > -10)
+				} else if (pl.mWarns > -10) {
 					pl.mWarns--;
+				}
 
 				bool skip_send = false,
 					has_gravity = !pl.god_mode && !pl.mod_mode && !pl.isAdmin;
@@ -2325,6 +2345,7 @@ namespace EE_CM
 
 			return stream.ToArray();
 		}
+
 		void deserializeEntry(BinaryReader reader, ref SaveEntry dat)
 		{
 			int header = reader.ReadUInt16();
@@ -2358,6 +2379,7 @@ namespace EE_CM
 				}
 			}
 		}
+
 		void deserializeData(byte[] data)
 		{
 			#region Define variables
@@ -2592,6 +2614,7 @@ namespace EE_CM
 
 			o.Set("worlddata", ar);
 		}
+
 		void readWorldData(ref DatabaseObject o, bool broadcast)
 		{
 			Message M_init = Message.Create("reset");
@@ -2679,8 +2702,7 @@ namespace EE_CM
 
 #if INDEV
 		void save_worlddata(Player pl, bool kick_all = false) {
-			pl.Send("info", "Warning", "You can not save a world in the indev mode." +
-					"\nKick all: " + kick_all.ToString().ToUpper());
+			pl.Send("write", "* ERROR", "You can not save a world in the indev mode.";
 			pl.Send("saved");
 		}
 #else
@@ -2927,6 +2949,7 @@ namespace EE_CM
 			}
 			#endregion
 		}
+
 		void initPlayers()
 		{
 			// Broadcast new DB-type world, spread the load
@@ -3028,6 +3051,7 @@ namespace EE_CM
 				pl.isInited = true;
 			}
 		}
+
 		void killPlayers()
 		{
 			kill_active = true;
@@ -3069,6 +3093,7 @@ namespace EE_CM
 			if (count > 0) Broadcast(msg);
 			kill_active = false;
 		}
+
 		int getBlock(int l, int x, int y)
 		{
 			if (!isValidCoor(x, y))
@@ -3080,6 +3105,7 @@ namespace EE_CM
 				return blocks[x, y].BG;
 			return -1;
 		}
+
 		int countBlock(int b)
 		{
 			int count = 0;
@@ -3089,6 +3115,7 @@ namespace EE_CM
 						count++;
 			return count;
 		}
+
 		byte getBlockArgCount(int id)
 		{
 			if (id == 43 || id == 77 || id == 1000) // 83
@@ -3119,6 +3146,7 @@ namespace EE_CM
 				Array.Resize(ref spawnCoor, count);
 			}
 		}
+
 		COOR get_next_spawn()
 		{
 			COOR c = new COOR();
@@ -3138,6 +3166,7 @@ namespace EE_CM
 			}
 			return c;
 		}
+
 		void clear_world(bool createBorder = false, bool loadingDone = true)
 		{
 			W_isLoading = true;
@@ -3177,6 +3206,7 @@ namespace EE_CM
 
 			if (loadingDone) W_isLoading = false;
 		}
+
 		void broadcast_clear_world()
 		{
 			clear_world(true);
@@ -3186,6 +3216,7 @@ namespace EE_CM
 			}
 			Broadcast("clear", W_width, W_height);
 		}
+
 		int SPIdToBlock(int id)
 		{
 			if (id == 2)
@@ -3198,6 +3229,7 @@ namespace EE_CM
 			//if (id == 2) id = 83;
 			//if (id == 3) id = 242;
 		}
+
 		int BlockToSPId(int id)
 		{
 			if (id == 43)
@@ -3210,6 +3242,7 @@ namespace EE_CM
 			//if (id == 83) id = 2;
 			//if (id == 242) id = 3;
 		}
+
 		void addLog(string p, string s)
 		{
 			for (int i = logbook.Length - 1; i > 0; i--) {
@@ -3217,6 +3250,7 @@ namespace EE_CM
 			}
 			logbook[0] = p.ToUpper() + ' ' + s;
 		}
+
 		void removeOldBlock(int x, int y, int id, int arg3)
 		{
 			if (id == 242) {
@@ -3260,6 +3294,7 @@ namespace EE_CM
 			p.system_messages++;
 			return allowed && syntax;
 		}
+
 		Rights get_rights(Player p)
 		{
 			if (p.isModerator) return Rights.Moderator;
@@ -3269,6 +3304,7 @@ namespace EE_CM
 			if (!p.isGuest) return Rights.Normal;
 			return Rights.None;
 		}
+
 		void handle_spam(Player pl, string msg)
 		{
 			short percent = isEqualTo(msg, pl.last_said);
@@ -3295,10 +3331,12 @@ namespace EE_CM
 				return false;
 			return isValidCoor(pos.x, pos.y);
 		}
+
 		bool isValidCoor(int x, int y)
 		{
 			return (x >= 0 && y >= 0 && x < W_width && y < W_height);
 		}
+
 		string generate_rot13()
 		{
 			char[] buffer = new char[3];
@@ -3310,6 +3348,7 @@ namespace EE_CM
 
 			return "." + new string(buffer);
 		}
+
 		string derot13(string arg1)
 		{
 			int num = 0;
@@ -3389,6 +3428,7 @@ namespace EE_CM
 				return (short)((equals / (float)total) * 100 + 0.5);
 			} else return 100;
 		}
+
 		bool is_yes(string r)
 		{
 			bool isyes = false;
@@ -3404,6 +3444,7 @@ namespace EE_CM
 			}
 			return isyes;
 		}
+
 		void set_setting(Player p, bool newValue, ref bool setting, string description)
 		{
 			if (newValue != setting) {
@@ -3417,6 +3458,7 @@ namespace EE_CM
 
 			p.Send("write", SYS, "Nothing to change for setting `" + description + "´. It already was set to: " + (setting ? "ON" : "OFF"));
 		}
+
 		long getMTime()
 		{
 			TimeSpan t = (DateTime.Now - new DateTime(2014, 1, 1));
