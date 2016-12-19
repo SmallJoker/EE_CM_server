@@ -693,7 +693,7 @@ namespace EE_CM
 					if (!pl.isModerator && !pl.isAdmin && !W_allowText)
 						return;
 
-					string text = info.check_Censored(m.GetString(4));
+					string text = m.GetString(4);
 					if (text.Length == 0 || string.IsNullOrWhiteSpace(text))
 						return;
 
@@ -1521,7 +1521,7 @@ namespace EE_CM
 						for (int i = 2; i < length; i++) {
 							content += args[i] + " ";
 						}
-						Broadcast("info", "Moderator Message: " + args[1], info.check_Censored(content));
+						Broadcast("info", "Moderator Message: " + args[1], content);
 						return;
 					}
 					if (args[0] == "/write") {
@@ -1539,7 +1539,7 @@ namespace EE_CM
 								break;
 							}
 						}
-						Broadcast("write", args[1], info.check_Censored(content));
+						Broadcast("write", args[1], content);
 						#endregion
 						return;
 					}
@@ -1669,8 +1669,6 @@ namespace EE_CM
 						if (content == "")
 							return;
 
-						content = info.check_Censored(content);
-
 						handle_spam(pl, content);
 
 						if (pl.sameText > 4 || pl.say_counter > 3) {
@@ -1699,8 +1697,6 @@ namespace EE_CM
 
 						if (content == "")
 							return;
-
-						content = info.check_Censored(content);
 
 						handle_spam(pl, content);
 
@@ -1994,8 +1990,6 @@ namespace EE_CM
 				#region Spamfilter
 				if (msg.Length > W_chatLimit)
 					msg = msg.Remove(W_chatLimit, msg.Length - W_chatLimit);
-
-				msg = info.check_Censored(msg);
 
 				handle_spam(pl, msg);
 
