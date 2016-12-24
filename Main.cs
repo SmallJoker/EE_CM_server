@@ -52,7 +52,7 @@ namespace EE_CM
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType("Game26")]
+	[RoomType("Game27")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -611,6 +611,7 @@ namespace EE_CM
 						if (b >= 269 && b <= 273) edit = true; // Gothic
 						if (b >= 274 && b <= 280) edit = true; // Prison
 						if (b >= 281 && b <= 285) edit = true; // Extra Gothic/Halloween
+						if (b == 286) edit = true; // Snowman
 
 						if (!edit)
 							return;
