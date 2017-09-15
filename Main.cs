@@ -33,7 +33,7 @@ namespace EE_CM {
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
-		SMILIES = 62
+		SMILIES = 64
 	}
 
 	enum Rights {
@@ -49,7 +49,7 @@ namespace EE_CM {
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType ("Game30")]
+	[RoomType ("Game31")]
 #endif
 	public class EENGameCode : Game<Player> {
 		#region Definition of block arrays and world data
@@ -261,8 +261,11 @@ namespace EE_CM {
 			if (!isGuest && pl.PlayerObject.Contains ("chatbanned"))
 				pl.isGuest = pl.PlayerObject.GetBool ("chatbanned");
 
-			if (pl.PlayerObject.Contains ("face"))
+			if (pl.PlayerObject.Contains ("face")) {
+				int face = pl.PlayerObject.GetInt ("face");
+				if (face < 0 || face == 31 || face > (int) C.SMILIES) pl.PlayerObject.Set ("face", 0);
 				pl.Face = pl.PlayerObject.GetInt ("face");
+			}
 
 			int found = 0;
 			System.Net.IPAddress ip = pl.IPAddress;
@@ -313,7 +316,7 @@ namespace EE_CM {
 			Broadcast ("left", pl.Id);
 			if (W_verbose) Broadcast ("write", "* VERBOSE", pl.Name + " has left.");
 #if !INDEV
-			pl.GetPlayerObject (delegate (DatabaseObject obj) {
+			if (pl.Face != 31) pl.GetPlayerObject (delegate (DatabaseObject obj) {
 				obj.Set ("face", pl.Face);
 				obj.Save ();
 			});
@@ -926,7 +929,7 @@ namespace EE_CM {
 					if(f >= 0){
 #else
 					// Disallow unknown smilies
-					if (f >= 0 && f < (int) C.SMILIES) {
+					if (f >= 0 && f != 31 && f <= (int) C.SMILIES) {
 #endif
 						Broadcast ("face", pl.Id, f);
 						pl.Face = f;
