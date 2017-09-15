@@ -263,7 +263,10 @@ namespace EE_CM {
 
 			if (pl.PlayerObject.Contains ("face")) {
 				int face = pl.PlayerObject.GetInt ("face");
-				if (face < 0 || face == 31 || face > (int) C.SMILIES) pl.PlayerObject.Set ("face", 0);
+				if (face < 0 || face == 31 || face > (int) C.SMILIES) {
+					pl.PlayerObject.Set ("face", 0);
+					pl.PlayerObject.Save ();
+				}
 				pl.Face = pl.PlayerObject.GetInt ("face");
 			}
 
@@ -315,12 +318,6 @@ namespace EE_CM {
 			pl.isInited = false;
 			Broadcast ("left", pl.Id);
 			if (W_verbose) Broadcast ("write", "* VERBOSE", pl.Name + " has left.");
-#if !INDEV
-			if (pl.Face != 31) pl.GetPlayerObject (delegate (DatabaseObject obj) {
-				obj.Set ("face", pl.Face);
-				obj.Save ();
-			});
-#endif
 		}
 
 		public override void GotMessage (Player pl, Message m) {
@@ -933,6 +930,8 @@ namespace EE_CM {
 #endif
 						Broadcast ("face", pl.Id, f);
 						pl.Face = f;
+						pl.PlayerObject.Set ("face", pl.Face);
+						pl.PlayerObject.Save ();
 					}
 				}
 				return;
