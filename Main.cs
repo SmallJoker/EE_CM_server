@@ -37,10 +37,10 @@ namespace EE_CM {
 	}
 
 	enum Rights {
-		Moderator = 6,
+		Developer = 6,
 		Owner = 5,
 		Admin = 4,
-		Vigilant = 3,
+		Moderator = 3,
 		Normal = 2,
 		Edit = 1,
 		None = 0,
@@ -902,7 +902,7 @@ namespace EE_CM {
 				return;
 			}
 			if (m.Type == "mod") {
-				if (!hasAccess (pl, Rights.Moderator)) return;
+				if (!hasAccess (pl, Rights.Developer)) return;
 				pl.mod_mode = m.GetBoolean (0);
 				if (!pl.canEdit) {
 					pl.Send ("access");
@@ -1106,7 +1106,7 @@ namespace EE_CM {
 									}
 								}
 								if (W_type < 0) {
-									pl.Send ("write", "* RESIZER", "Something strange happened, contact a moderator please.");
+									pl.Send ("write", "* RESIZER", "Something strange happened, contact a developer please.");
 									return;
 								}
 								int[] newSize = info.getWorldSize (W_type);
@@ -1157,7 +1157,7 @@ namespace EE_CM {
 					}
 					#endregion
 					if (args[0] == "/kick") {
-						if (!hasAccess (pl, Rights.Vigilant, length > 1)) return;
+						if (!hasAccess (pl, Rights.Moderator, length > 1)) return;
 						#region kick
 						args[1] = args[1].ToLower ();
 						bool found = false;
@@ -1181,7 +1181,7 @@ namespace EE_CM {
 						}
 						if (found) {
 							Broadcast ("write", SYS, pl.Name + " kicked " + args[1].ToUpper () + ": " + content);
-						} else pl.Send ("write", SYS, "Unknown username or player is the owner or a moderator");
+						} else pl.Send ("write", SYS, "Unknown username or player is the owner or a developer");
 						#endregion
 						return;
 					}
@@ -1249,7 +1249,7 @@ namespace EE_CM {
 						return;
 					}
 					if (args[0] == "/ban") {
-						if (!hasAccess (pl, Rights.Vigilant, length > 1)) return;
+						if (!hasAccess (pl, Rights.Moderator, length > 1)) return;
 						#region banning
 						string player_name = args[1].ToLower ();
 						bool found = false,
@@ -1277,7 +1277,7 @@ namespace EE_CM {
 							banned.Add (player_name);
 							Broadcast ("write", SYS, pl.Name + " banned " + player_name);
 						} else {
-							pl.Send ("write", SYS, "Unknown username, player is owner or moderator");
+							pl.Send ("write", SYS, "Unknown username, player is owner or developer");
 						}
 						#endregion
 						return;
@@ -1323,13 +1323,13 @@ namespace EE_CM {
 							});
 							Broadcast ("write", SYS, pl.Name + " banned " + player_name + " from EE CM");
 						} else {
-							pl.Send ("write", SYS, "Unknown username, player is owner, vigilant or moderator");
+							pl.Send ("write", SYS, "Unknown username, player is owner, moderator or developer");
 						}
 						#endregion
 						return;
 					}
 					if (args[0] == "/unban") {
-						if (!hasAccess (pl, Rights.Vigilant, length > 1)) return;
+						if (!hasAccess (pl, Rights.Moderator, length > 1)) return;
 						#region unbanning
 						args[1] = args[1].ToLower ();
 						if (banned.Contains (args[1])) {
@@ -1345,7 +1345,7 @@ namespace EE_CM {
 						args[1] = args[1].ToLower ();
 						string list = "";
 						if (args[1] == "ban" || args[1] == "bans") {
-							if (!hasAccess (pl, Rights.Vigilant)) return;
+							if (!hasAccess (pl, Rights.Moderator)) return;
 							string[] banned_array = banned.GetData ();
 							for (int i = 0; i < banned_array.Length; i++) {
 								list += banned_array[i] + ", ";
@@ -1507,7 +1507,7 @@ namespace EE_CM {
 					}
 					#region modpower
 					if (args[0] == "/info") {
-						if (!hasAccess (pl, Rights.Moderator, length > 2)) return;
+						if (!hasAccess (pl, Rights.Developer, length > 2)) return;
 						string content = "";
 						for (int i = 2; i < length; i++) {
 							content += args[i] + " ";
@@ -1516,7 +1516,7 @@ namespace EE_CM {
 						return;
 					}
 					if (args[0] == "/write") {
-						if (!hasAccess (pl, Rights.Moderator, length > 2)) return;
+						if (!hasAccess (pl, Rights.Developer, length > 2)) return;
 						#region modwrite
 						args[1] = args[1].ToLower ();
 						string content = "";
@@ -1551,7 +1551,7 @@ namespace EE_CM {
 						return;
 					}
 					if (args[0] == "/getip") {
-						if (!hasAccess (pl, Rights.Moderator, length > 1)) return;
+						if (!hasAccess (pl, Rights.Developer, length > 1)) return;
 						#region getIP
 						bool found = false;
 						args[1] = args[1].ToLower ();
@@ -1567,7 +1567,7 @@ namespace EE_CM {
 						return;
 					}
 					if (args[0] == "/eliminate") {
-						if (!hasAccess (pl, Rights.Moderator, length > 1)) return;
+						if (!hasAccess (pl, Rights.Developer, length > 1)) return;
 						#region kick player
 						args[1] = args[1].ToLower ();
 						bool found = false;
@@ -1586,7 +1586,7 @@ namespace EE_CM {
 					#endregion
 					if (args[0] == "/killroom") {
 						if (!hasAccess (pl, Rights.Owner)) return;
-						Broadcast ("info", "World Killed", "This world has been killed by " + (pl.isAdmin ? "the owner" : " a moderator"));
+						Broadcast ("info", "World Killed", "This world has been killed by " + (pl.isAdmin ? "the owner" : " a developer"));
 						foreach (Player p in Players) {
 							p.Disconnect ();
 						}
@@ -1631,7 +1631,7 @@ namespace EE_CM {
 						return;
 					}
 					if (args[0] == "/upgrade") {
-						if (!hasAccess (pl, Rights.Moderator)) return;
+						if (!hasAccess (pl, Rights.Developer)) return;
 						W_upgrade = true;
 						foreach (Player p in Players) {
 							if (!p.isModerator) {
@@ -1840,7 +1840,7 @@ namespace EE_CM {
 						string lMgr = "Level Managing: /getblockinfo, /gbi" + (W_isSaved ? ", /list admins" : ""),
 							pSpec = "\n\nPlayer specific: /respawn, /woot, /rankof [name], /mute [name], /unmute [name], /list mutes",
 							cTool = "\n\nOther tools: /pm [name] [text], /teleport {[name], [x] [y]}, /me [text]";
-						if (level >= Rights.Vigilant) {
+						if (level >= Rights.Moderator) {
 							lMgr += ", /ban [name], /unban [name], /list bans";
 							pSpec += ", /kick [name] [reason]";
 						}
@@ -1853,7 +1853,7 @@ namespace EE_CM {
 						if (level >= Rights.Owner) {
 							lMgr += ", /resize_this_world, /killroom" + (W_isSaved ? ", /addadmin [name], /rmadmin [name]" : "");
 						}
-						if (level == Rights.Moderator) {
+						if (level == Rights.Developer) {
 							pSpec += ", /getip [name]";
 							cTool += ", /write [name] [text], /info [title] [text]";
 						}
@@ -3262,10 +3262,10 @@ namespace EE_CM {
 		}
 
 		Rights get_rights (Player p) {
-			if (p.isModerator) return Rights.Moderator;
+			if (p.isModerator) return Rights.Developer;
 			if (p.Name == W_Owner || p.Name == "x." + W_Owner) return Rights.Owner;
 			if (p.isAdmin) return Rights.Admin;
-			if (p.isVigilant) return Rights.Vigilant;
+			if (p.isVigilant) return Rights.Moderator;
 			if (!p.isGuest) return Rights.Normal;
 			return Rights.None;
 		}
