@@ -49,7 +49,7 @@ namespace EE_CM {
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType ("Game31")]
+	[RoomType ("Game32")]
 #endif
 	public class EENGameCode : Game<Player> {
 		#region Definition of block arrays and world data
@@ -603,6 +603,7 @@ namespace EE_CM {
 						if (b >= 281 && b <= 285) edit = true; // Extra Gothic/Halloween
 						if (b == 286) edit = true; // Snowman
 						if (b == 287) edit = true; // Kock
+						if (b >= 288 && b <= 299) edit = true; // Glass
 
 						if (!edit)
 							return;
