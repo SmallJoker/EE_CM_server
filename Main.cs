@@ -49,7 +49,7 @@ namespace EE_CM {
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType ("Game32")]
+	[RoomType ("Game34")]
 #endif
 	public class EENGameCode : Game<Player> {
 		#region Definition of block arrays and world data
@@ -542,6 +542,8 @@ namespace EE_CM {
 						if (b >= 447 && b <= 455) edit = true;  // Mario
 						if (b >= 456 && b <= 457) edit = true;  // Extra gothic blocks
 						if (b >= 458 && b <= 465) edit = true;  // Evolution
+						if (b >= 466 && b <= 485) edit = true;  // Alien
+						if (b >= 486 && b <= 491) edit = true;  // Mansion
 
 						// Decoration
 						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
@@ -658,6 +660,8 @@ namespace EE_CM {
 						if (b >= 575 && b <= 583) edit = true;  // Hexagonal
 						if (b == 584) edit = true;              // Extra backgrounds
 						if (b >= 585 && b <= 592) edit = true;  // Evolution
+						if (b >= 593 && b <= 597) edit = true;  // Alien
+						if (b == 598 || b == 599) edit = true;  // Mansion
 
 						if (!edit) return;
 
