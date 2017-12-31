@@ -1,6 +1,6 @@
 ﻿/*
 EE CM serverside codes
-Copyright (C) 2013-2015 Krock/SmallJoker <mk939@ymail.com>
+Copyright (C) 2013-2017 Krock/SmallJoker & HG <mk939@ymail.com / aljoes50@gmail.com>
 
 
 This library is free software; you can redistribute it and/or
@@ -29,11 +29,11 @@ using PlayerIO.GameLibrary;
 namespace EE_CM {
 	// Constants
 	enum C {
-		BLOCK_MAX = 500,
+		BLOCK_MAX = 1020,
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
-		SMILIES = 64
+		SMILIES = 65
 	}
 
 	enum Rights {
@@ -49,7 +49,7 @@ namespace EE_CM {
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType ("Game34")]
+	[RoomType ("Game35")]
 #endif
 	public class EENGameCode : Game<Player> {
 		#region Definition of block arrays and world data
@@ -544,6 +544,11 @@ namespace EE_CM {
 						if (b >= 458 && b <= 465) edit = true;  // Evolution
 						if (b >= 466 && b <= 485) edit = true;  // Alien
 						if (b >= 486 && b <= 491) edit = true;  // Mansion
+						if (b == 492) edit = true;  // Extra Metal Block
+						if (b >= 493 && b <= 499) edit = true;  // Paint
+						if (b >= 1001 && b <= 1007) edit = true;  // Checker
+						if (b >= 1008 && b <= 1014) edit = true;  // Dice
+						if (b == 1015) edit = true;  // Terraquark
 
 						// Decoration
 						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
@@ -606,6 +611,8 @@ namespace EE_CM {
 						if (b == 286) edit = true; // Snowman
 						if (b == 287) edit = true; // Kock
 						if (b >= 288 && b <= 299) edit = true; // Glass
+						if (b >= 300 && b <= 305) edit = true; // Alien
+						if (b >= 306 && b <= 310) edit = true; // Cave
 
 						if (!edit)
 							return;
@@ -662,6 +669,8 @@ namespace EE_CM {
 						if (b >= 585 && b <= 592) edit = true;  // Evolution
 						if (b >= 593 && b <= 597) edit = true;  // Alien
 						if (b == 598 || b == 599) edit = true;  // Mansion
+						if (b == 600) edit = true;              // Black
+						if (b >= 601 && b <= 608) edit = true;  // Stripped
 
 						if (!edit) return;
 
@@ -931,7 +940,7 @@ namespace EE_CM {
 					if(f >= 0){
 #else
 					// Disallow unknown smilies
-					if (f >= 0 && f != 31 && f <= (int) C.SMILIES) {
+					if (f >= 0 && f != 31 && f != 65 && f <= (int) C.SMILIES) {
 #endif
 						Broadcast ("face", pl.Id, f);
 						pl.Face = f;
@@ -1676,11 +1685,62 @@ namespace EE_CM {
 						#endregion
 						return;
 					}
+					if (args[0] == "/away" || args[0] == "/afk") {
+						if (!hasAccess (pl, Rights.Normal)) return;
+						#region away
+						string reason = string.Empty;
+						for (int i = 1; i < length; i++) {
+							reason += args[i] + " ";
+							if (reason.Length > W_chatLimit) {
+								reason = reason.Remove (W_chatLimit);
+								break;
+							}
+						}
+						pl.isAway = true;
+						pl.awayReason = reason;
+						if (W_verbose) Broadcast ("write", "* VERBOSE", pl.Name + " is now marked as being away.");
+						Broadcast ("face", pl.Id, 65);
+						#endregion
+						return;
+					}
+					if (args[0] == "/back" || args[0] == "/unafk") {
+						if (!hasAccess (pl, Rights.Normal)) return;
+						#region back
+						if (W_verbose) Broadcast ("write", "* VERBOSE", pl.Name + " is no longer marked as being away.");
+						pl.isAway = false;
+						pl.awayReason = string.Empty;
+						Broadcast ("face", pl.Id, pl.Face);
+						#endregion
+						return;
+					}
+					if (args[0] == "/isaway" || args[0] == "/isafk") {
+						if (!hasAccess (pl, Rights.Normal, length > 1)) return;
+						#region check if user is away
+						bool found = false, away = false;
+						string reason = string.Empty;
+						foreach (Player p in Players) {
+							if (p.Name == args[1].ToLower ()) {
+								found = true;
+								away = p.isAway;
+								reason = p.awayReason;
+							}
+						}
+
+						if (found) {
+							if (away)
+								pl.Send ("write", SYS, args[1] + " is away." + (string.IsNullOrEmpty (reason) ? string.Empty : (" Reason: " + reason)));
+							else
+								pl.Send ("write", SYS, args[1] + " is not away.");
+						} else
+							pl.Send ("write", SYS, "Unknown username.");
+						#endregion
+						return;
+					}
 					if (args[0] == "/pm") {
 						if (!hasAccess (pl, Rights.Normal, length > 2)) return;
 						#region pm
 						args[1] = args[1].ToLower ();
-						bool found = false;
+						bool found = false, ignored = false;
 						string content = "";
 						for (int i = 2; i < length; i++) {
 							content += args[i] + " ";
@@ -1706,17 +1766,22 @@ namespace EE_CM {
 								found = true;
 								if (!p.muted.Contains (pl.Name))
 									p.Send ("write", "*FROM " + pl.Name.ToUpper (), content);
+								else
+									ignored = true;
 							}
 						}
 
 						if (found)
-							pl.Send ("write", "*TO " + args[1].ToUpper (), content);
+							if (!ignored)
+								pl.Send ("write", "*TO " + args[1].ToUpper (), content);
+							else
+								pl.Send ("write", SYS, "This user has muted you.");
 						else
 							pl.Send ("write", SYS, "Unknown username");
 						#endregion
 						return;
 					}
-					if (args[0] == "/mute") {
+					if (args[0] == "/mute" || args[0] == "/ignore") {
 						if (!hasAccess (pl, Rights.Normal, length > 1)) return;
 						#region mute
 						string name = args[1].ToLower ();
@@ -1740,7 +1805,7 @@ namespace EE_CM {
 						#endregion
 						return;
 					}
-					if (args[0] == "/unmute") {
+					if (args[0] == "/unmute" || args[0] == "/unignore") {
 						if (!hasAccess (pl, Rights.Normal, length > 1)) return;
 						#region unmute
 						args[1] = args[1].ToLower ();
@@ -2150,6 +2215,13 @@ namespace EE_CM {
 				}
 				#endregion
 				#endregion
+
+				if (pl.isAway) {
+					if (W_verbose) Broadcast ("write", "* VERBOSE", pl.Name + " is no longer marked as being away.");
+					pl.isAway = false;
+					pl.awayReason = string.Empty;
+					Broadcast ("face", pl.Id, pl.Face);
+				}
 			}
 		}
 
@@ -3015,8 +3087,8 @@ namespace EE_CM {
 				#region Misc
 				foreach (Player p in Players) {
 					if (p.Id != pl.Id) {
-						pl.Send ("add", p.Id, p.Name, p.Face, p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
-						p.Send ("add", pl.Id, pl.Name, pl.Face, pl.posX, pl.posY, false, false, !pl.isGuest, 0);
+						pl.Send ("add", p.Id, p.Name, p.isAway ? 65 : p.Face, p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
+						p.Send ("add", pl.Id, pl.Name, pl.isAway ? 65 : pl.Face, pl.posX, pl.posY, false, false, !pl.isGuest, 0);
 					}
 				}
 				if (keys[0] >= 1)

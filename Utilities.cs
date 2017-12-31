@@ -24,47 +24,47 @@ using PlayerIO.GameLibrary;
 namespace EE_CM {
 	public class Player : BasePlayer {
 		public string Name = "",
-			last_said = "";
+			last_said = "",
+			awayReason = "";
 		public pList<string> muted = new pList<string> ();
 
 		public int Face = 0,
-				   code_tries = 0,
-				   coins = 0,
-				   sameText = 0,
-				   moved = 0,
-				   mWarns = 0,
-				   cPointX = -1,
-				   cPointY = -1,
-				   say_counter = 0,
-				   system_messages = 0,
-
-				   posX = 16,
-				   posY = 16,
-				   speedX = 0,
-				   speedY = 0,
-				   gravityX = 0,
-				   gravityY = 0,
-				   keyX = 0,
-				   keyY = 0;
+			code_tries = 0,
+			coins = 0,
+			sameText = 0,
+			moved = 0,
+			mWarns = 0,
+			cPointX = -1,
+			cPointY = -1,
+			say_counter = 0,
+			system_messages = 0,
+			posX = 16,
+			posY = 16,
+			speedX = 0,
+			speedY = 0,
+			gravityX = 0,
+			gravityY = 0,
+			keyX = 0,
+			keyY = 0;
 
 		public bool isAdmin = false,
-					isModerator = false,
-					isVigilant = false,
-					isGuest = false,
-					god_mode = false,
-					mod_mode = false,
-					isDead = false,
-
-					isInited = false,
-					init_binary = false,
-					isBot = false,
-					firstFace = false,
-					send_init = false,
-					canEdit = false,
-					levelComplete = false,
-					gotCoin = false,
-					getBlockInfo = false,
-					wootGiven = false;
+			isModerator = false,
+			isVigilant = false,
+			isGuest = false,
+			god_mode = false,
+			mod_mode = false,
+			isDead = false,
+			isInited = false,
+			init_binary = false,
+			isBot = false,
+			firstFace = false,
+			send_init = false,
+			canEdit = false,
+			levelComplete = false,
+			gotCoin = false,
+			getBlockInfo = false,
+			wootGiven = false,
+			isAway = false;
 	}
 
 	public class LobbyPlayer : BasePlayer {
