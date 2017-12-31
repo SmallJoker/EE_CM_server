@@ -22,51 +22,51 @@ using System;
 using PlayerIO.GameLibrary;
 
 namespace EE_CM {
-	[RoomType("Lobby3")]
+	[RoomType ("Lobby3")]
 	public class EELGameCode : Game<LobbyPlayer> {
-		WorldInfo info = new WorldInfo();
+		WorldInfo info = new WorldInfo ();
 
-		public override bool AllowUserJoin(LobbyPlayer pl) {
+		public override bool AllowUserJoin (LobbyPlayer pl) {
 			return PlayerCount < 5;
 		}
 
-		public override void UserJoined(LobbyPlayer pl) {
-			string ip = pl.IPAddress.ToString();
+		public override void UserJoined (LobbyPlayer pl) {
+			string ip = pl.IPAddress.ToString ();
 			if (ip == null) {
-					pl.Disconnect();
-					return;
+				pl.Disconnect ();
+				return;
 			}
 
-			PlayerIO.BigDB.LoadRange("PlayerObjects", "ip", null, ip, ip, 4, delegate(DatabaseObject[] obj) {
+			PlayerIO.BigDB.LoadRange ("PlayerObjects", "ip", null, ip, ip, 4, delegate (DatabaseObject[] obj) {
 				pl.amount_accounts = obj.Length;
 
-				PlayerIO.BigDB.Load("PlayerObjects", pl.ConnectUserId, delegate(DatabaseObject o) {
+				PlayerIO.BigDB.Load ("PlayerObjects", pl.ConnectUserId, delegate (DatabaseObject o) {
 					if (o == null) return;
 					if (!o.ExistsInDatabase) {
-						pl.Disconnect();
+						pl.Disconnect ();
 						return;
 					}
 
-					if (!o.Contains("ip") || o.GetString("ip") != ip) {
-						o.Set("ip", ip);
-						o.Save();
+					if (!o.Contains ("ip") || o.GetString ("ip") != ip) {
+						o.Set ("ip", ip);
+						o.Save ();
 						pl.amount_accounts++;
 					}
 				});
 			});
 		}
 
-		public override void GotMessage(LobbyPlayer pl, Message m) {
+		public override void GotMessage (LobbyPlayer pl, Message m) {
 			if (m.Type == "setUsername") {
 				if (pl.amount_accounts >= 3) {
-					pl.Send("error", "You already have too many accounts! Clear the flash cache and login.");
+					pl.Send ("error", "You already have too many accounts! Clear the flash cache and login.");
 					return;
 				}
 				#region username
-				string username = m.GetString(0).ToLower();
-				string name_censored = info.check_Censored(username);
+				string username = m.GetString (0).ToLower ();
+				string name_censored = info.check_Censored (username);
 				if (username != name_censored) {
-					pl.Send("error", "Found unacceptable words.");
+					pl.Send ("error", "Found unacceptable words.");
 					return;
 				}
 
@@ -86,24 +86,24 @@ namespace EE_CM {
 					}
 				}
 				if (!allowed || username.Length < 3 || username.Length > 20) {
-					pl.Send("error", "Please choose a name with 3 to 20 letters and/or numbers.");
+					pl.Send ("error", "Please choose a name with 3 to 20 letters and/or numbers.");
 					return;
 				}
-				PlayerIO.BigDB.LoadOrCreate("Usernames", username, delegate(DatabaseObject obj) {
+				PlayerIO.BigDB.LoadOrCreate ("Usernames", username, delegate (DatabaseObject obj) {
 					if (obj.ExistsInDatabase) {
-						if (obj.Contains("owner")) {
-							pl.Send("error", "Username already taken");
+						if (obj.Contains ("owner")) {
+							pl.Send ("error", "Username already taken");
 							return;
 						}
 					}
 
-					obj.Set("owner", pl.ConnectUserId);
-					obj.Save();
-					pl.GetPlayerObject(delegate(DatabaseObject o) {
-						o.Set("name", username);
-						o.Set("ip", pl.IPAddress.ToString());
-						o.Save();
-						pl.Send("username", username);
+					obj.Set ("owner", pl.ConnectUserId);
+					obj.Save ();
+					pl.GetPlayerObject (delegate (DatabaseObject o) {
+						o.Set ("name", username);
+						o.Set ("ip", pl.IPAddress.ToString ());
+						o.Save ();
+						pl.Send ("username", username);
 					});
 				});
 				#endregion
@@ -113,122 +113,122 @@ namespace EE_CM {
 				int energy = 100, timeToEnergy = 30,
 						totalEnergy = 200, secoundsBetweenEnergy = 30;
 
-				pl.Send("getShop", energy, timeToEnergy, totalEnergy, secoundsBetweenEnergy, 0);
+				pl.Send ("getShop", energy, timeToEnergy, totalEnergy, secoundsBetweenEnergy, 0);
 				#endregion
 			}
 			if (m.Type == "useEnergy") {
-				pl.Send("useEnergy", "error");
+				pl.Send ("useEnergy", "error");
 			}
 			if (m.Type == "useGems") {
-				pl.Send("useGems", "error");
+				pl.Send ("useGems", "error");
 			}
 			if (m.Type == "getProfile") {
-				pl.Send("getProfile", false);
+				pl.Send ("getProfile", false);
 			}
 			if (m.Type == "toggleProfile") {
-				pl.Send("toggleProfile", false);
+				pl.Send ("toggleProfile", false);
 			}
 			if (m.Type == "getSavedLevel") {
 				if (pl.ConnectUserId == "simpleguest") return;
 
 				#region redirect
-				int r_type = m.GetInt(0),
-					r_count = m.GetInt(1);
-				string typestring = r_type.ToString() + "x" + r_count.ToString();
+				int r_type = m.GetInt (0),
+					r_count = m.GetInt (1);
+				string typestring = r_type.ToString () + "x" + r_count.ToString ();
 
-				if (r_type > (int)C.WORLD_TYPES || r_type < 0 ||
-					r_count > (int)C.WORLDS_PER_PLAYER || r_count < 0) {
-					pl.Send("r", "OW_invalid_request_" + typestring);
+				if (r_type > (int) C.WORLD_TYPES || r_type < 0 ||
+					r_count > (int) C.WORLDS_PER_PLAYER || r_count < 0) {
+					pl.Send ("r", "OW_invalid_request_" + typestring);
 					return;
 				}
-				
-				PlayerIO.BigDB.Load("PlayerObjects", pl.ConnectUserId, delegate(DatabaseObject o) {
+
+				PlayerIO.BigDB.Load ("PlayerObjects", pl.ConnectUserId, delegate (DatabaseObject o) {
 					if (!o.ExistsInDatabase) return;
 
-					getWorld(pl, ref o, info.getWorldSize(r_type), typestring);
-				}, delegate(PlayerIOError err) {
-					throw new Exception("Impossible to load PlayerObject of " + pl.ConnectUserId);
+					getWorld (pl, ref o, info.getWorldSize (r_type), typestring);
+				}, delegate (PlayerIOError err) {
+					throw new Exception ("Impossible to load PlayerObject of " + pl.ConnectUserId);
 				});
 				return;
 				#endregion
 			}
 			if (m.Type == "getRoom" || m.Type == "getBetaRoom") {
 				if (pl.ConnectUserId == "simpleguest") return;
-				
+
 				#region betarooms
 				bool isBetaOnly = (m.Type == "getBetaRoom");
 				string betaId = (isBetaOnly ? "beta0" : "beta1");
 
-				PlayerIO.BigDB.Load("PlayerObjects", pl.ConnectUserId, delegate(DatabaseObject o) {
+				PlayerIO.BigDB.Load ("PlayerObjects", pl.ConnectUserId, delegate (DatabaseObject o) {
 					if (!o.ExistsInDatabase) return;
-					
-					getWorld(pl, ref o, info.getWorldSize(3), betaId, isBetaOnly);
-				}, delegate(PlayerIOError err) {
-					throw new Exception("Impossible to load PlayerObject of " + pl.ConnectUserId);
+
+					getWorld (pl, ref o, info.getWorldSize (3), betaId, isBetaOnly);
+				}, delegate (PlayerIOError err) {
+					throw new Exception ("Impossible to load PlayerObject of " + pl.ConnectUserId);
 				});
 				return;
 				#endregion
 			}
 		}
 
-		void getWorld(LobbyPlayer pl, ref DatabaseObject o, int[] size, string typestring, bool isbeta = false) {
+		void getWorld (LobbyPlayer pl, ref DatabaseObject o, int[] size, string typestring, bool isbeta = false) {
 			#region get worldId from DB
 			string[] types = new string[0],
 				ids = new string[0];
 
-			if (o.Contains("roomType") && o.Contains("roomId")) {
-				types = o.GetString("roomType").Split(',');
-				ids = o.GetString("roomId").Split(',');
+			if (o.Contains ("roomType") && o.Contains ("roomId")) {
+				types = o.GetString ("roomType").Split (',');
+				ids = o.GetString ("roomId").Split (',');
 			}
 
 			for (int i = 0; i < types.Length; i++) {
 				if (types[i] == typestring) {
-					pl.Send("r", ids[i]);
+					pl.Send ("r", ids[i]);
 					return;
 				}
 			}
 			#endregion
-			
+
 			if (pl.amount_accounts >= 3) {
-				pl.Send("r", "OW_limit_reached_" + typestring);
+				pl.Send ("r", "OW_limit_reached_" + typestring);
 				return;
 			}
 
 			#region generate world
-			string world_id = (isbeta ? "BW" : "PW") + GenWID(info.random.Next(4, 6)) + "I";
+			string world_id = (isbeta ? "BW" : "PW") + GenWID (info.random.Next (4, 6)) + "I";
 			string p_types = "",
 				p_ids = "";
 
-			if (o.Contains("roomType") && o.Contains("roomId")) {
-				p_types = o.GetString("roomType");
-				p_ids = o.GetString("roomId");
+			if (o.Contains ("roomType") && o.Contains ("roomId")) {
+				p_types = o.GetString ("roomType");
+				p_ids = o.GetString ("roomId");
 			}
 
-			o.Set("roomType", p_types + typestring + ",");
-			o.Set("roomId", p_ids + world_id + ",");
-			o.Save();
+			o.Set ("roomType", p_types + typestring + ",");
+			o.Set ("roomId", p_ids + world_id + ",");
+			o.Save ();
 
-			DatabaseObject data = new DatabaseObject();
-			data.Set("name", "Untitled World");
-			data.Set("owner", pl.ConnectUserId);
-			data.Set("plays", 0);
-			data.Set("width", size[0]);
-			data.Set("height", size[1]);
-			PlayerIO.BigDB.CreateObject("Worlds", world_id, data, delegate(DatabaseObject obj) {
-				pl.Send("r", world_id);
+			DatabaseObject data = new DatabaseObject ();
+			data.Set ("name", "Untitled World");
+			data.Set ("owner", pl.ConnectUserId);
+			data.Set ("plays", 0);
+			data.Set ("width", size[0]);
+			data.Set ("height", size[1]);
+			PlayerIO.BigDB.CreateObject ("Worlds", world_id, data, delegate (DatabaseObject obj) {
+				pl.Send ("r", world_id);
 			});
 			#endregion
 		}
 
-		string GenWID(int size) {
+		string GenWID (int size) {
 			char[] buffer = new char[size];
 			string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvw_0123456789";
 
 			for (int i = 0; i < size; i++) {
-				buffer[i] = chars[info.random.Next(chars.Length)];
+				buffer[i] = chars[info.random.Next (chars.Length)];
 			}
 
-			return new string(buffer);
+			return new string (buffer);
 		}
 	}
 }
