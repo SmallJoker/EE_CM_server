@@ -37,7 +37,8 @@ namespace EE_CM
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
 		SMILIES = 66,
-		AWAY_SMILEY = 65
+		AWAY_SMILEY = 65,
+		DIAMOND_SMILEY = 31
 	}
 
 	enum Rights
@@ -322,7 +323,7 @@ namespace EE_CM
 			pl.isInited = false;
 			Broadcast("left", pl.Id);
 #if !INDEV
-			pl.GetPlayerObject(delegate(DatabaseObject obj) {
+			pl.GetPlayerObject(delegate (DatabaseObject obj) {
 				obj.Set("face", pl.Face);
 				obj.Save();
 			});
@@ -913,8 +914,9 @@ namespace EE_CM
 			if (m.Type == "diamondtouch") {
 				if (m.Count >= 2 && !pl.god_mode && !pl.mod_mode && pl.Face != 31) {
 					if (getBlock(0, m.GetInt(0), m.GetInt(1)) == 241) {
-						Broadcast("face", pl.Id, 31);
-						pl.Face = 31;
+						if(!pl.isAway)
+							Broadcast("face", pl.Id, 31);
+						pl.isCrystalized = true;
 					}
 				}
 				return;
@@ -955,7 +957,7 @@ namespace EE_CM
 					if(f >= 0){
 #else
 					// Disallow unknown smilies
-					if (f >= 0 && f <= (int)C.SMILIES && f != (int)C.AWAY_SMILEY) {
+					if (f >= 0 && f <= (int)C.SMILIES && f != (int)C.DIAMOND_SMILEY && f != (int)C.AWAY_SMILEY) {
 #endif
 						Broadcast("face", pl.Id, f);
 						pl.Face = f;
@@ -2064,7 +2066,7 @@ namespace EE_CM
 
 				if(pl.isAway)
 				{
-					Broadcast("face", pl.Id, pl.Face);
+					Broadcast("face", pl.Id, pl.isCrystalized ? (int)C.DIAMOND_SMILEY : pl.Face);
 					pl.isAway = false;
 				}
 
@@ -3058,8 +3060,12 @@ namespace EE_CM
 				#region Misc
 				foreach (Player p in Players) {
 					if (p.Id != pl.Id) {
-						pl.Send("add", p.Id, p.Name, p.isAway ? (int)C.AWAY_SMILEY : p.Face, p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
-						p.Send("add", pl.Id, pl.Name, pl.isAway ? (int)C.AWAY_SMILEY : pl.Face, pl.posX, pl.posY, false, false, !pl.isGuest, 0);
+						pl.Send("add", p.Id, p.Name, 
+							p.isAway ? (int)C.AWAY_SMILEY : p.isCrystalized ? (int)C.DIAMOND_SMILEY : p.Face,
+							p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
+						p.Send("add", pl.Id, pl.Name,
+							pl.isAway ? (int)C.AWAY_SMILEY : pl.isCrystalized ? (int)C.DIAMOND_SMILEY : pl.Face,
+							pl.posX, pl.posY, false, false, !pl.isGuest, 0);
 					}
 				}
 				if (keys[0] >= 1)
