@@ -57,6 +57,7 @@ namespace EE_CM
 					mod_mode = false,
 					isDead = false,
 					isAway = false,
+					isCrystalized = false, // Has diamond smiley
 
 					isInited = false,
 					init_binary = false,
