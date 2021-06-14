@@ -31,11 +31,13 @@ namespace EE_CM
 	// Constants
 	enum C
 	{
-		BLOCK_MAX = 500,
+		// Must always be higher than the highest block ID, by 1
+		BLOCK_MAX = 1031,
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
-		SMILIES = 58
+		SMILIES = 66,
+		AWAY_SMILEY = 65
 	}
 
 	enum Rights
@@ -52,7 +54,7 @@ namespace EE_CM
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType("Game27")]
+	[RoomType("Game38")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -205,7 +207,7 @@ namespace EE_CM
 				}
 			}
 
-			if (time - last_online < 10)
+			if (time - last_online < 5)
 				return "You create traffic and I am a traffic light.";
 
 			if (W_resized)
@@ -252,7 +254,7 @@ namespace EE_CM
 						break;
 					}
 				}
-				if (name.Length < 3)
+				if (name.Length < 2)
 					return "You are using an invalid nickname.";
 			} else name = "guest-" + (pl.Id + 1);
 
@@ -523,52 +525,61 @@ namespace EE_CM
 #else
 						#region foreground
 						bool edit = false;
-						if (b >= 0 && b <= 36) edit = true;		// Default
-						if (b >= 37 && b <= 42) edit = true;	// Beta
+						if (b >= 0 && b <= 36) edit = true;		// Default (some by Krock)
+						if (b >= 37 && b <= 42) edit = true;	// Beta (by Krock)
 						if (b == 44) edit = true;				// Black
-						if (b >= 45 && b <= 49) edit = true;	// Factory
+						if (b >= 45 && b <= 49) edit = true;	// Factory (by Krock)
 						if (b == 50 || b == 243) edit = true;	// Secrets
-						if (b >= 51 && b <= 58) edit = true;	// Glass
+						if (b >= 51 && b <= 58) edit = true;	// Glass (by Krock)
 						if (b == 59) edit = true;				// Summer 2011
-						if (b >= 60 && b <= 67) edit = true;	// Candy
+						if (b >= 60 && b <= 67) edit = true;	// Candy (some by Krock)
 						if (b >= 68 && b <= 69) edit = true;	// Halloween 2011
-						if (b >= 70 && b <= 76) edit = true;	// Minerals
+						if (b >= 70 && b <= 76) edit = true;	// Minerals (by Krock)
 						if (b >= 78 && b <= 82) edit = true;	// Christmas 2011
-						if (b >= 84 && b <= 89) edit = true;	// Tiles
+						if (b >= 84 && b <= 89) edit = true;	// Tiles (by Minimania)
 						if (b == 90) edit = true;				// White basic
-						if (b == 91 || b == 92) edit = true;	// Swamp - One way
+						if (b == 91 || b == 92) edit = true;	// Swamp - One way (by Toop)
 						if (b >= 93 && b <= 95) edit = true;	// Ice
-						if (b >= 96 && b <= 98) edit = true;	// Gothic
+						if (b >= 96 && b <= 98) edit = true;	// Gothic (by Toop)
 						if (b >= 100 && b <= 101) edit = true;	// Coins
 						//if (b >= 110 && b <= 111) edit = true;
-						if (b >= 400 && b <= 405) edit = true;	// Materials
-						if (b >= 406 && b <= 411) edit = true;	// Wall
-						if (b >= 412 && b <= 414) edit = true;	// Winter
-						if (b >= 415 && b <= 422) edit = true;	// Wood
-						if (b >= 423 && b <= 425) edit = true;	// Marble
-						if (b == 426 || b == 427) edit = true;	// Granite
-						if (b >= 428 && b <= 438) edit = true;	// Extra Blocks
-						if (b >= 439 && b <= 446) edit = true;	// Carpet
-						if (b >= 447 && b <= 455) edit = true;	// Mario
-						if (b >= 456 && b <= 457) edit = true;	// Extra gothic blocks
-						if (b >= 458 && b <= 465) edit = true;	// Evolution
+						if (b >= 400 && b <= 405) edit = true;	// Materials (unknown)
+						if (b >= 406 && b <= 411) edit = true;	// Wall (by Stubby)
+						if (b >= 412 && b <= 414) edit = true;	// Winter (by Toop)
+						if (b >= 415 && b <= 422) edit = true;	// Wood (by HG)
+						if (b >= 423 && b <= 425) edit = true;	// Marble (by HG)
+						if (b == 426 || b == 427) edit = true;	// Granite (by HG)
+						if (b >= 428 && b <= 438) edit = true;	// Extra Blocks (some unknown, some by HG)
+						if (b >= 439 && b <= 446) edit = true;	// Carpet (by Toop)
+						if (b >= 447 && b <= 455) edit = true;	// Mario (unknown)
+						if (b >= 456 && b <= 457) edit = true;	// Extra gothic blocks (by Toop)
+						if (b >= 458 && b <= 465) edit = true;  // Evolution (by HG)
+						if (b >= 466 && b <= 485) edit = true;  // Alien (by Anatoly)
+						if (b >= 486 && b <= 491) edit = true;  // Mansion (by Shadowda)
+						if (b == 492) edit = true;				// Extra metal block (by Toop)
+						if (b >= 493 && b <= 499) edit = true;  // Paint (by Toop)
+						if (b >= 1001 && b <= 1007) edit = true;// Checker (by Cola1)
+						if (b >= 1008 && b <= 1014) edit = true;// Dice (by Sleepy)
+						if (b == 1015) edit = true;				// Terraquark (by Weirdo)
+						if (b >= 1016 && b <= 1020) edit = true;// Organic (by Boberov)
+						if (b >= 1021 && b <= 1030) edit = true;// Mecha (by Boberov and TundrumMax)
 
 						// Decoration
 						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
-							edit = true; // Codeblock
+							edit = true; // Codeblock (by HG)
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used > 2)
 									edit = false;
 							}
 						}
 						if (b == 104) {
-							edit = true; // Checkpoint
+							edit = true; // Checkpoint (by Krock)
 							if (Nblock[0, b] != null) {
 								if (Nblock[0, b].used > 600)
 									edit = false;
 							}
 						}
-						if (b == 105) edit = true; // Hazard (Spikes)
+						if (b == 105) edit = true; // Hazard (Spikes) (by Krock)
 						if ((b == 106 || b == 107) && pl.isAdmin) {
 							edit = true; // Trophy
 							if (Nblock[0, b] != null) {
@@ -576,11 +587,11 @@ namespace EE_CM
 									edit = false;
 							}
 						}
-						if (b == 108 || b == 109) edit = true;	// Water
-						if (b == 112) edit = true;				// Ladder
-						if (b == 113) edit = true;				// Sand (slow)
-						if (b == 118) edit = true;				// Swamp-water
-						if (b >= 114 && b <= 117) edit = true;	// Boost
+						if (b == 108 || b == 109) edit = true;	// Water (by Krock)
+						if (b == 112) edit = true;				// Ladder (unknown)
+						if (b == 113) edit = true;				// Sand (slow) (unknown)
+						if (b == 118) edit = true;				// Swamp-water (by Krock)
+						if (b >= 114 && b <= 117) edit = true;	// Boost (by Krock)
 
 						//end special
 						if (b == 121) edit = true;				// Invisible
@@ -597,8 +608,8 @@ namespace EE_CM
 									edit = false;
 							}
 						}
-						if (b >= 244 && b <= 248) edit = true; // New year 2010
-						if (b >= 249 && b <= 254) edit = true; // Christmas 2010
+						if (b >= 244 && b <= 248) edit = true;	// New year 2010
+						if (b >= 249 && b <= 254) edit = true;	// Christmas 2010
 						if (b == 255 && (pl.isAdmin || pl.isModerator)) {
 							edit = true; // Spawnpoint
 							if (Nblock[0, b] != null) {
@@ -606,12 +617,16 @@ namespace EE_CM
 									edit = false;
 							}
 						}
-						if (b >= 256 && b <= 264) edit = true; // Swamp plants
-						if (b >= 265 && b <= 268) edit = true; // Snow and ice
-						if (b >= 269 && b <= 273) edit = true; // Gothic
-						if (b >= 274 && b <= 280) edit = true; // Prison
-						if (b >= 281 && b <= 285) edit = true; // Extra Gothic/Halloween
-						if (b == 286) edit = true; // Snowman
+						if (b >= 256 && b <= 264) edit = true;	// Swamp plants (by Toop)
+						if (b >= 265 && b <= 268) edit = true;	// Snow and ice (by Toop)
+						if (b >= 269 && b <= 273) edit = true;	// Gothic (by Toop)
+						if (b >= 274 && b <= 280) edit = true;	// Prison (by Toop)
+						if (b >= 281 && b <= 285) edit = true;	// Extra Gothic/Halloween (by HG)
+						if (b == 286) edit = true;				// Snowman (unknown)
+						if (b == 287) edit = true;				// Kock (by HG)
+						if (b >= 288 && b <= 299) edit = true;	// Glass (by HG)
+						if (b >= 300 && b <= 305) edit = true;  // Alien (by Weirdo)
+						if (b >= 306 && b <= 310) edit = true;	// Cave (by Weirdo)
 
 						if (!edit)
 							return;
@@ -649,23 +664,27 @@ namespace EE_CM
 						#region background
 						bool edit = false;
 						if (b == 0) edit = true;
-						if (b >= 500 && b <= 512) edit = true;	// Basic
+						if (b >= 500 && b <= 512) edit = true;	// Basic (by Krock)
 						if (b >= 513 && b <= 519) edit = true;	// Checker
 						if (b >= 520 && b <= 526) edit = true;	// Dark
 						if (b >= 527 && b <= 532) edit = true;	// Pastel
 						if (b >= 533 && b <= 538) edit = true;	// Canvas
 						if (b >= 539 && b <= 540) edit = true;	// Candy
 						if (b >= 541 && b <= 544) edit = true;	// Halloween 2011
-						if (b >= 545 && b <= 549) edit = true;	// Wallpaper
-						if (b >= 550 && b <= 555) edit = true;	// Tile
-						if (b >= 556 && b <= 558) edit = true;	// Ice
-						if (b == 559) edit = true;				// Gothic
-						if (b >= 560 && b <= 564) edit = true;	// Fancy
-						if (b >= 565 && b <= 568) edit = true;	// Green
-						if (b >= 569 && b <= 574) edit = true;	// Stone
-						if (b >= 575 && b <= 583) edit = true;	// Hexagonal
-						if (b == 584) edit = true;				// Extra backgrounds
-						if (b >= 585 && b <= 592) edit = true;	// Evolution
+						if (b >= 545 && b <= 549) edit = true;	// Wallpaper (by Toop)
+						if (b >= 550 && b <= 555) edit = true;	// Tile (by Minimania)
+						if (b >= 556 && b <= 558) edit = true;	// Ice (by Toop)
+						if (b == 559) edit = true;				// Gothic (by Toop)
+						if (b >= 560 && b <= 564) edit = true;	// Fancy (by HG and Krock)
+						if (b >= 565 && b <= 568) edit = true;	// Green (by HG and Krock)
+						if (b >= 569 && b <= 574) edit = true;	// Stone (by HG)
+						if (b >= 575 && b <= 583) edit = true;	// Hexagonal (by Stubby)
+						if (b == 584) edit = true;				// Extra backgrounds (unknown)
+						if (b >= 585 && b <= 592) edit = true;  // Evolution (by HG)
+						if (b >= 593 && b <= 597) edit = true;  // Alien (by Anatoly)
+						if (b >= 598 && b <= 599) edit = true;  // Mansion (by Shadowda)
+						if (b == 600) edit = true;              // Black (by HG)
+						if (b >= 601 && b <= 608) edit = true;	// Stripped (by Ravatroll)
 
 						if (!edit) return;
 
@@ -936,7 +955,7 @@ namespace EE_CM
 					if(f >= 0){
 #else
 					// Disallow unknown smilies
-					if (f >= 0 && f < (int)C.SMILIES) {
+					if (f >= 0 && f <= (int)C.SMILIES && f != (int)C.AWAY_SMILEY) {
 #endif
 						Broadcast("face", pl.Id, f);
 						pl.Face = f;
@@ -1190,7 +1209,7 @@ namespace EE_CM
 							}
 						}
 						if (found) {
-							Broadcast("write", SYS, pl.Name + " kicked " + args[1].ToUpper() + ": " + content);
+							Broadcast("write", SYS, pl.Name.ToUpper() + " kicked " + args[1].ToUpper() + ": " + content);
 						} else pl.Send("write", SYS, "Unknown username or player is the owner or a moderator");
 						#endregion
 						return;
@@ -1681,6 +1700,13 @@ namespace EE_CM
 						#endregion
 						return;
 					}
+					if (args[0] == "/away" || args[0] == "/afk")
+					{
+						Broadcast("face", pl.Id, (int)C.AWAY_SMILEY);
+						pl.isAway = true;
+						return;
+					}
+
 					if (args[0] == "/pm") {
 						if (!hasAccess(pl, Rights.Normal, length > 2)) return;
 						#region pm
@@ -2034,6 +2060,12 @@ namespace EE_CM
 				if (m.Count < 8) {
 					pl.Disconnect();
 					return;
+				}
+
+				if(pl.isAway)
+				{
+					Broadcast("face", pl.Id, pl.Face);
+					pl.isAway = false;
 				}
 
 				pl.moved++;
@@ -3026,8 +3058,8 @@ namespace EE_CM
 				#region Misc
 				foreach (Player p in Players) {
 					if (p.Id != pl.Id) {
-						pl.Send("add", p.Id, p.Name, p.Face, p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
-						p.Send("add", pl.Id, pl.Name, pl.Face, pl.posX, pl.posY, false, false, !pl.isGuest, 0);
+						pl.Send("add", p.Id, p.Name, p.isAway ? (int)C.AWAY_SMILEY : p.Face, p.posX, p.posY, p.god_mode, p.mod_mode, !p.isGuest, p.coins);
+						p.Send("add", pl.Id, pl.Name, pl.isAway ? (int)C.AWAY_SMILEY : pl.Face, pl.posX, pl.posY, false, false, !pl.isGuest, 0);
 					}
 				}
 				if (keys[0] >= 1)

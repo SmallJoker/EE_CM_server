@@ -56,6 +56,7 @@ namespace EE_CM
 					god_mode = false,
 					mod_mode = false,
 					isDead = false,
+					isAway = false,
 
 					isInited = false,
 					init_binary = false,
