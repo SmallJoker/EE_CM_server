@@ -32,7 +32,7 @@ namespace EE_CM
 	enum C
 	{
 		// Must always be higher than the highest block ID, by 1
-		BLOCK_MAX = 1031,
+		BLOCK_MAX = 1041,
 		BLOCK_TYPES = 5,
 		WORLD_TYPES = 5,
 		WORLDS_PER_PLAYER = 4,
@@ -55,7 +55,7 @@ namespace EE_CM
 #if INDEV
 	[RoomType("Indev")]
 #else
-	[RoomType("Game38")]
+	[RoomType("Game39")]
 #endif
 	public class EENGameCode : Game<Player>
 	{
@@ -564,6 +564,8 @@ namespace EE_CM
 						if (b == 1015) edit = true;				// Terraquark (by Weirdo)
 						if (b >= 1016 && b <= 1020) edit = true;// Organic (by Boberov)
 						if (b >= 1021 && b <= 1030) edit = true;// Mecha (by Boberov and TundrumMax)
+						if (b >= 1031 && b <= 1034) edit = true;// Dungeon (by dcomet)
+						if (b >= 1035 && b <= 1040) edit = true;// Bark (by Crabaret and HG)
 
 						// Decoration
 						if (b == 103 && (pl.isAdmin || pl.isModerator)) {
@@ -627,7 +629,9 @@ namespace EE_CM
 						if (b == 287) edit = true;				// Kock (by HG)
 						if (b >= 288 && b <= 299) edit = true;	// Glass (by HG)
 						if (b >= 300 && b <= 305) edit = true;  // Alien (by Weirdo)
-						if (b >= 306 && b <= 310) edit = true;	// Cave (by Weirdo)
+						if (b >= 306 && b <= 310) edit = true;  // Cave (by Weirdo)
+						if (b >= 311 && b <= 313) edit = true;  // Dungeon (by dcomet)
+						if (b >= 314 && b <= 320) edit = true;	// Urban (by dcomet)
 
 						if (!edit)
 							return;
@@ -685,7 +689,9 @@ namespace EE_CM
 						if (b >= 593 && b <= 597) edit = true;  // Alien (by Anatoly)
 						if (b >= 598 && b <= 599) edit = true;  // Mansion (by Shadowda)
 						if (b == 600) edit = true;              // Black (by HG)
-						if (b >= 601 && b <= 608) edit = true;	// Stripped (by Ravatroll)
+						if (b >= 601 && b <= 608) edit = true;  // Stripped (by Ravatroll)
+						if (b == 609) edit = true;              // Dungeon (by dcomet)
+						if (b >= 610 && b <= 617) edit = true;	// Urban (by dcomet)
 
 						if (!edit) return;
 
