@@ -67,7 +67,7 @@ namespace EE_CM
 		PlayerHistory[] usernames = new PlayerHistory[16];
 		WorldInfo info = new WorldInfo();
 
-		int[] gravity0Id = new int[] { 4, 112, 114, 115, 116, 117, 118 };
+		int[] gravity0Id = new int[] { 4, 112, 114, 115, 116, 117, 118, 313 };
 
 		pList<string> banned = new pList<string>(),
 			admins = new pList<string>();
@@ -2101,10 +2101,14 @@ namespace EE_CM
 				if (W_isLoading || pl.moved > moveLimit)
 					return;
 
-				if (pl.mWarns >= 25 && !pl.isModerator) {
-					pl.Send("info", "Error", "The data from your client is not correct.");
-					pl.Disconnect();
-					return;
+				if (pl.mWarns >= 25) {
+					if (!pl.isModerator) {
+						pl.Send("info", "Error", "The data from your client is not correct.");
+						pl.Disconnect();
+						return;
+					}
+					else
+						pl.Send("write", "* Warning", "mWarns threshold exceeded. Current: " + pl.mWarns);
 				} else if (pl.mWarns > -10) {
 					pl.mWarns--;
 				}
